@@ -2,7 +2,12 @@
 
 ## Overview
 
-Blytz.Cloud is a cloud-based booking management solution for freelancers that enforces upfront payment before appointment confirmation. It's a React + TypeScript + Vite application with a multi-tenant SaaS architecture.
+Blytz.Cloud is a cloud-based booking management solution for freelancers that enforces upfront payment before appointment confirmation. Full-stack application with:
+
+- **Frontend**: React + TypeScript + Vite
+- **Backend**: Go with Gin framework + GORM
+- **Database**: PostgreSQL
+- **Cache**: Redis
 
 ## Commands
 
@@ -35,37 +40,66 @@ GEMINI_API_KEY=your_gemini_api_key_here
 
 ```
 /home/gmsas95/blytz.booking/
-├── components/          # Reusable UI components
-│   ├── Button.tsx
-│   ├── Card.tsx
-│   └── Input.tsx
-├── screens/             # Page-level / view components
-│   ├── Confirmation.tsx
-│   ├── Login.tsx
-│   ├── OperatorDashboard.tsx
-│   ├── PublicBooking.tsx
-│   └── SaaSLanding.tsx
-├── App.tsx              # Main app router (view state management)
-├── index.tsx            # Entry point
-├── types.ts             # TypeScript interfaces and enums
-├── constants.ts         # Mock data (businesses, services, slots, bookings)
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-└── index.html
+├── frontend/            # React + TypeScript frontend
+│   ├── components/      # Reusable UI components
+│   │   ├── Button.tsx
+│   │   ├── Card.tsx
+│   │   └── Input.tsx
+│   ├── screens/         # Page-level / view components
+│   │   ├── Confirmation.tsx
+│   │   ├── Login.tsx
+│   │   ├── OperatorDashboard.tsx
+│   │   ├── PublicBooking.tsx
+│   │   └── SaaSLanding.tsx
+│   ├── App.tsx         # Main app router (view state management)
+│   ├── index.tsx       # Entry point
+│   ├── api.ts          # API client for backend communication
+│   ├── types.ts        # TypeScript interfaces and enums
+│   ├── constants.ts    # Mock data (deprecated, use API)
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── vite.config.ts
+│   └── index.html
+├── backend/             # Go backend API
+│   ├── cmd/
+│   │   └── server/
+│   │       └── main.go           # Application entry point
+│   ├── internal/
+│   │   ├── handlers/              # HTTP request handlers
+│   │   │   └── handlers.go
+│   │   ├── models/                # Data models
+│   │   │   └── models.go
+│   │   └── repository/            # Data access layer
+│   │       └── repository.go
+│   ├── config/
+│   │   └── config.go             # Configuration management
+│   ├── Dockerfile
+│   └── go.mod
+├── docker-compose.yml   # Multi-service orchestration
+├── .env.example       # Environment variables template
+└── AGENTS.md         # This file
 ```
 
 ## Code Patterns & Conventions
 
-### Component Structure
+### Go Backend Patterns
+- **Architecture**: Clean architecture with handlers, models, repository separation
+- **Framework**: Gin HTTP router
+- **ORM**: GORM for database operations
+- **Configuration**: Environment-based config with struct-based loading
+- **API Design**: RESTful with `/api/v1/` prefix
+- **Naming**: Go conventions - CamelCase exported, camelCase unexported
+
+### Frontend Component Structure
 - **Functional Components**: All components use React functional components with TypeScript
 - **Props Interfaces**: Define props interfaces explicitly, either inline or in `types.ts`
 - **Export Pattern**: Named exports for all components (`export const ComponentName: React.FC<Props> = ...`)
 
 ### State Management
-- **Local State**: Use `useState` for component-local state
-- **Derived State**: Use `useMemo` for filtering and computed values
-- **View Routing**: The app uses a custom view state pattern in `App.tsx` with `ViewState` enum
+- **Frontend**: Local state with `useState`, derived state with `useEffect` for API calls
+- **Backend**: Database-driven state with GORM, optional Redis caching
+- **API Communication**: Centralized API client in `api.ts`
+- **View Routing**: Custom view state pattern in `App.tsx` with `ViewState` enum
 
 ### Naming Conventions
 - **Components**: PascalCase (`PublicBooking`, `OperatorDashboard`)
@@ -88,14 +122,20 @@ GEMINI_API_KEY=your_gemini_api_key_here
 - **Path Alias**: `@/` maps to project root (e.g., `@/components/Button`)
 - **Import Extensions**: `.ts` and `.tsx` extensions allowed in imports
 
-### Mock Data Pattern
-All mock data is centralized in `constants.ts`:
-- `MOCK_BUSINESSES`: Business entities
-- `MOCK_SERVICES`: Service offerings per business
-- `MOCK_SLOTS`: Available time slots
-- `MOCK_BOOKINGS`: Booking records
+### Mock Data Pattern (Frontend)
+Mock data is centralized in `constants.ts` but **deprecated** - use API instead:
+- `MOCK_BUSINESSES`: Business entities (deprecated)
+- `MOCK_SERVICES`: Service offerings per business (deprecated)
+- `MOCK_SLOTS`: Available time slots (deprecated)
+- `MOCK_BOOKINGS`: Booking records (deprecated)
 
-Mock data uses ISO date strings for timestamps and is filtered by `businessId` when needed.
+New components use the API client in `api.ts` for real data.
+
+### Database Seeding (Backend)
+Backend automatically seeds initial data on startup in `repository.SeedData()`:
+- 3 businesses (Automotive, Wellness, Creative)
+- 4 services (2 per business)
+- Slots are generated dynamically or seeded via SQL
 
 ### View Routing
 The app uses a custom view state machine rather than a traditional router:
@@ -163,37 +203,74 @@ Currently no tests, no test files, no test runner configured. This is a demo/pro
 
 ## Docker & Dokploy Deployment
 
-### Files Created
-- `Dockerfile`: Multi-stage build (Node build → Node serve with `serve` package)
-- `docker-compose.yml`: Service definition with Traefik labels
-- `.dockerignore`: Optimizes build context
+### Full Stack Services
+The `docker-compose.yml` orchestrates 4 services:
+
+1. **PostgreSQL**: Database (port 5432)
+2. **Redis**: Cache (port 6379)
+3. **Backend**: Go API (port 8080)
+4. **Frontend**: React app served with `serve` (port 80)
+
+### Docker Files Created
+- **Frontend Dockerfile**: Multi-stage build (Node build → Node serve)
+- **Backend Dockerfile**: Multi-stage build (Go build → Alpine binary)
+- **docker-compose.yml**: Full-stack orchestration with Traefik labels
+- **.dockerignore**: Optimizes build context (both frontend and backend)
 
 ### Build Process
-1. **Builder Stage**: Uses Node.js 22 Alpine to install deps and run `npm run build`
-2. **Production Stage**: Serves static files with `serve` package (lightweight Node.js static server)
-3. **Output**: Static files in `/dist` served on port 80
+**Frontend**:
+1. **Builder Stage**: Node.js 22 Alpine, installs deps, runs `npm run build`
+2. **Production Stage**: Serves static files with `serve` package
+
+**Backend**:
+1. **Builder Stage**: Golang 1.22, downloads deps, compiles binary
+2. **Production Stage**: Alpine with compiled binary
 
 ### Dokploy Setup with Traefik
 1. Connect your Git repository to Dokploy
 2. Use `docker-compose.yml` as the deployment configuration
 3. Update `your-domain.com` in Traefik labels to your actual domain
-4. Set environment variable `GEMINI_API_KEY` in Dokploy's env vars section
-5. Deploy - Dokploy will build and run the container
-6. Traefik will automatically route traffic to the container
+4. Set environment variables:
+   - `DB_USER`, `DB_PASSWORD`, `DB_NAME` for PostgreSQL
+   - `JWT_SECRET` for authentication
+   - `GEMINI_API_KEY` for frontend (if using AI features)
+5. Deploy - Dokploy will build and run all containers
+6. Traefik will automatically route:
+   - `your-domain.com` → Frontend
+   - `your-domain.com/api` → Backend
 
 ### Environment Variables
-Only required env var:
+Copy `.env.example` to `.env` and configure:
+
+```bash
+# Database
+DB_USER=postgres
+DB_PASSWORD=your_secure_password
+DB_NAME=blytz
+
+# JWT
+JWT_SECRET=your-super-secret-key
+
+# Frontend (development)
+VITE_API_URL=http://localhost:8080
 ```
-GEMINI_API_KEY=your_key_here
-```
-Set this in Dokploy's environment variables section (not in `.env.local`).
+
+In production/Dokploy, set these via the Dokploy UI.
 
 ## Development Notes
 
-### Vite Configuration
+### Vite Configuration (Frontend)
 - Dev server: `localhost:3000` with `host: 0.0.0.0`
-- Environment variables: `GEMINI_API_KEY` is exposed via `process.env`
+- Environment variables: `VITE_API_URL` for backend URL
 - Path resolution: `@` alias maps to project root
+- Proxy: In production, Traefik handles `/api` routing
+
+### Go Configuration (Backend)
+- Server: Gin router on port 8080
+- Database: PostgreSQL with GORM (auto-migration on startup)
+- Redis: Optional caching layer (currently unused)
+- CORS: Enabled for all origins (configure for production)
+- Seeding: Automatically seeds initial business/service data
 
 ### TypeScript Strictness
 - `skipLibCheck: true` for faster builds
@@ -202,6 +279,66 @@ Set this in Dokploy's environment variables section (not in `.env.local`).
 
 ### Component Props Patterns
 Components use `React.HTMLAttributes` extensions for native element props:
+
+```typescript
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  fullWidth?: boolean;
+  isLoading?: boolean;
+}
+```
+
+This allows passing standard HTML attributes (`disabled`, `className`, `onClick`, etc.) to components.
+
+## API Architecture
+
+### Backend API Endpoints
+Base URL: `http://localhost:8080` (or via Traefik)
+
+**Health**
+- `GET /health` - Health check endpoint
+
+**Businesses**
+- `GET /api/v1/businesses` - List all businesses
+- `GET /api/v1/businesses/:id` - Get business details
+
+**Services**
+- `GET /api/v1/businesses/:businessId/services` - List services for a business
+
+**Slots**
+- `GET /api/v1/businesses/:businessId/slots` - Get available slots (not booked)
+
+**Bookings**
+- `POST /api/v1/bookings` - Create a new booking
+- `GET /api/v1/businesses/:businessId/bookings` - List bookings for a business
+
+### API Client (Frontend)
+Frontend uses centralized API client in `api.ts`:
+```typescript
+import { api } from './api';
+
+// Get all businesses
+const businesses = await api.getBusinesses();
+
+// Get services for a business
+const services = await api.getServicesByBusiness(businessId);
+
+// Create booking
+const booking = await api.createBooking({
+  business_id,
+  service_id,
+  slot_id,
+  // ...
+});
+```
+
+### Data Models
+**Business**: id, name, slug, vertical, description, theme_color
+**Service**: id, business_id, name, description, duration_min, total_price, deposit_amount
+**Slot**: id, business_id, start_time, end_time, is_booked
+**Booking**: id, business_id, service_id, slot_id, service_name, slot_time, customer, status, deposit_paid, total_price
+
+## Multi-Step Form Pattern
 
 ```typescript
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

@@ -1,25 +1,99 @@
 services:
-  blytz-cloud:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: blytz-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-blytz}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - blytz-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: blytz-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - blytz-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Go Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: blytz-backend
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8080
+      ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-blytz}
+      DB_SSLMODE: disable
+      REDIS_HOST: redis:6379
+      REDIS_PASSWORD: ""
+      REDIS_DB: 0
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - blytz-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.blytz-backend.rule=Host(`your-domain.com`)"
+      - "traefik.http.routers.blytz-backend.entrypoints=websecure"
+      - "traefik.http.routers.blytz-backend.tls=true"
+      - "traefik.http.routers.blytz-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.blytz-backend.loadbalancer.server.port=8080"
+      - "traefik.http.routers.blytz-backend.middlewares=blytz-api-strip"
+      - "traefik.http.middlewares.blytz-api-strip.stripprefix.prefixes=/api"
+
+  # React Frontend
+  frontend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: blytz-cloud
+    container_name: blytz-frontend
     restart: unless-stopped
+    environment:
+      VITE_API_URL: http://backend:8080
+    depends_on:
+      - backend
     labels:
-      # Traefik labels
       - "traefik.enable=true"
-      - "traefik.http.routers.blytz-cloud.rule=Host(`your-domain.com`)"
-      - "traefik.http.routers.blytz-cloud.entrypoints=websecure"
-      - "traefik.http.routers.blytz-cloud.tls=true"
-      - "traefik.http.services.blytz-cloud.loadbalancer.server.port=80"
-      # Optional: Enable HTTP to HTTPS redirect
-      - "traefik.http.routers.blytz-cloud-http.rule=Host(`your-domain.com`)"
-      - "traefik.http.routers.blytz-cloud-http.entrypoints=web"
-      - "traefik.http.routers.blytz-cloud-http.middlewares=redirect-to-https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+      - "traefik.http.routers.blytz-frontend.rule=Host(`your-domain.com`)"
+      - "traefik.http.routers.blytz-frontend.entrypoints=websecure"
+      - "traefik.http.routers.blytz-frontend.tls=true"
+      - "traefik.http.routers.blytz-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.blytz-frontend.loadbalancer.server.port=80"
+
+networks:
+  blytz-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

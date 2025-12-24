@@ -1,7 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Check, Lock, Clock } from 'lucide-react';
-import { MOCK_SERVICES, MOCK_SLOTS } from '../constants';
-import { Service, Slot, CustomerDetails, Business } from '../types';
+import { api, Service, Slot, CustomerDetails, Business } from '../api';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
@@ -21,13 +20,39 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
   const [customer, setCustomer] = useState<CustomerDetails>({ name: '', email: '', phone: '' });
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Filter data for this business
-  const businessServices = useMemo(() => MOCK_SERVICES.filter(s => s.businessId === business.id), [business.id]);
-  const businessSlots = useMemo(() => MOCK_SLOTS.filter(s => s.businessId === business.id), [business.id]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [slots, setSlots] = useState<Slot[]>([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [loadingSlots, setLoadingSlots] = useState(true);
+
+  // Fetch services and slots when business changes
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoadingServices(true);
+        setLoadingSlots(true);
+
+        const [servicesData, slotsData] = await Promise.all([
+          api.getServicesByBusiness(business.id),
+          api.getSlotsByBusiness(business.id),
+        ]);
+
+        setServices(servicesData);
+        setSlots(slotsData);
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+      } finally {
+        setLoadingServices(false);
+        setLoadingSlots(false);
+      }
+    };
+
+    fetchData();
+  }, [business.id]);
 
   // Helper to format currency
   const fmtMoney = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
-  
+
   // Helper to format date
   const fmtDate = (iso: string) => new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(iso));
   const fmtTime = (iso: string) => new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
@@ -38,7 +63,7 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
   };
 
   const handleSlotSelect = (slot: Slot) => {
-    if (slot.isBooked) return;
+    if (slot.is_booked) return;
     setSelectedSlot(slot);
   };
 
@@ -53,18 +78,35 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
     }
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
+    if (!selectedService || !selectedSlot) return;
+
     setIsProcessing(true);
-    // Simulate network request
-    setTimeout(() => {
-      setIsProcessing(false);
+    try {
+      const booking = await api.createBooking({
+        business_id: business.id,
+        service_id: selectedService.id,
+        slot_id: selectedSlot.id,
+        service_name: selectedService.name,
+        slot_time: selectedSlot.start_time,
+        customer: customer,
+        deposit_paid: selectedService.deposit_amount,
+        total_price: selectedService.total_price,
+      });
+
       onComplete({
         business,
         service: selectedService,
         slot: selectedSlot,
         customer,
+        booking,
       });
-    }, 2000);
+    } catch (err) {
+      console.error('Failed to create booking:', err);
+      alert('Failed to create booking. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const goBack = () => {
@@ -74,9 +116,8 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
     if (step === 'PAYMENT') setStep('DETAILS');
   };
 
-  // Dynamic Theme Color (Tailwind doesn't support dynamic JIT class interpolation easily without safelist, 
-  // so we'll use inline styles for the specific brand color)
-  const brandStyle = { color: business.themeColor };
+  // Dynamic Theme Color
+  const brandStyle = { color: business.theme_color };
 
   return (
     <div className="w-full min-h-screen bg-white pb-24 font-sans">
@@ -106,19 +147,21 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
             {step === 'SERVICE' && "Choose the package that fits your needs."}
             {step === 'SLOT' && "Select an available opening for your session."}
             {step === 'DETAILS' && "Where should we send the confirmation?"}
-            {step === 'PAYMENT' && `A ${selectedService ? fmtMoney(selectedService.depositAmount) : ''} deposit is required to confirm.`}
+            {step === 'PAYMENT' && `A ${selectedService ? fmtMoney(selectedService.deposit_amount) : ''} deposit is required to confirm.`}
           </p>
         </div>
 
         {/* STEP 1: SERVICE SELECTION */}
         {step === 'SERVICE' && (
           <div className="space-y-4">
-            {businessServices.length === 0 ? (
+            {loadingServices ? (
+               <p className="text-gray-500">Loading services...</p>
+            ) : services.length === 0 ? (
                <p className="text-gray-500">No services available for this business.</p>
             ) : (
-              businessServices.map((service) => (
-                <Card 
-                  key={service.id} 
+              services.map((service) => (
+                <Card
+                  key={service.id}
                   onClick={() => handleServiceSelect(service)}
                   className="hover:scale-[1.01] transition-transform"
                 >
@@ -126,13 +169,13 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
                     <div>
                       <h3 className="font-semibold text-gray-900">{service.name}</h3>
                       <p className="text-sm text-gray-500 mt-1 line-clamp-2">{service.description}</p>
-                      <p className="text-xs text-gray-400 mt-2">{service.durationMin} minutes</p>
+                      <p className="text-xs text-gray-400 mt-2">{service.duration_min} minutes</p>
                     </div>
                     <div className="text-right">
-                      <span className="block font-medium text-gray-900">{fmtMoney(service.totalPrice)}</span>
-                      {service.depositAmount < service.totalPrice && (
+                      <span className="block font-medium text-gray-900">{fmtMoney(service.total_price)}</span>
+                      {service.deposit_amount < service.total_price && (
                         <span className="block text-xs font-medium text-primary-600">
-                          Deposit: {fmtMoney(service.depositAmount)}
+                          Deposit: {fmtMoney(service.deposit_amount)}
                         </span>
                       )}
                     </div>
@@ -151,9 +194,9 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
               {[0, 1, 2, 3].map(offset => {
                 const d = new Date();
                 d.setDate(d.getDate() + offset);
-                const isSelected = offset === (selectedSlot ? (new Date(selectedSlot.startTime).getDate() - new Date().getDate()) : -1);
+                const isSelected = offset === (selectedSlot ? (new Date(selectedSlot.start_time).getDate() - new Date().getDate()) : -1);
                 return (
-                  <button 
+                  <button
                     key={offset}
                     className={`flex flex-col items-center justify-center min-w-[4rem] h-16 rounded-lg border text-sm transition-colors ${isSelected ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-200 bg-white text-gray-600'}`}
                   >
@@ -165,16 +208,18 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
             </div>
 
             <div className="space-y-3 mt-2">
-              {businessSlots.length === 0 && <p className="text-gray-500 text-sm">No slots configured.</p>}
-              {businessSlots.map((slot) => {
+              {loadingSlots ? (
+                <p className="text-gray-500 text-sm">Loading slots...</p>
+              ) : slots.length === 0 && <p className="text-gray-500 text-sm">No slots configured.</p>}
+              {slots.map((slot) => {
                 return (
                   <button
                     key={slot.id}
-                    disabled={slot.isBooked}
+                    disabled={slot.is_booked}
                     onClick={() => handleSlotSelect(slot)}
                     className={`w-full flex items-center justify-between p-4 rounded-lg border text-left transition-all ${
-                      slot.isBooked 
-                        ? 'bg-gray-100 border-gray-100 text-gray-400 cursor-not-allowed' 
+                      slot.is_booked
+                        ? 'bg-gray-100 border-gray-100 text-gray-400 cursor-not-allowed'
                         : selectedSlot?.id === slot.id
                           ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500'
                           : 'bg-white border-gray-200 hover:border-primary-300'
@@ -183,10 +228,10 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
                     <div className="flex items-center gap-3">
                       <Clock className={`h-4 w-4 ${selectedSlot?.id === slot.id ? 'text-primary-600' : 'text-gray-400'}`} />
                       <span className={`font-medium ${selectedSlot?.id === slot.id ? 'text-primary-900' : 'text-gray-900'}`}>
-                        {fmtTime(slot.startTime)} - {fmtTime(slot.endTime)}
+                        {fmtTime(slot.start_time)} - {fmtTime(slot.end_time)}
                       </span>
                     </div>
-                    {slot.isBooked && <span className="text-xs font-medium">Booked</span>}
+                    {slot.is_booked && <span className="text-xs font-medium">Booked</span>}
                     {selectedSlot?.id === slot.id && <Check className="h-4 w-4 text-primary-600" />}
                   </button>
                 );
@@ -195,9 +240,9 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
 
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 safe-area-pb z-20">
               <div className="max-w-lg mx-auto">
-                <Button 
-                  fullWidth 
-                  disabled={!selectedSlot} 
+                <Button
+                  fullWidth
+                  disabled={!selectedSlot}
                   onClick={handleSlotConfirm}
                 >
                   Continue
@@ -210,30 +255,30 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
         {/* STEP 3: CUSTOMER DETAILS */}
         {step === 'DETAILS' && (
           <form onSubmit={handleDetailsSubmit} className="space-y-4">
-            <Input 
-              label="Full Name" 
+            <Input
+              label="Full Name"
               placeholder="Jane Doe"
               required
               value={customer.name}
               onChange={e => setCustomer({...customer, name: e.target.value})}
             />
-            <Input 
-              label="Email Address" 
-              type="email" 
+            <Input
+              label="Email Address"
+              type="email"
               placeholder="jane@example.com"
               required
               value={customer.email}
               onChange={e => setCustomer({...customer, email: e.target.value})}
             />
-            <Input 
-              label="Phone Number" 
-              type="tel" 
+            <Input
+              label="Phone Number"
+              type="tel"
               placeholder="(555) 123-4567"
               required
               value={customer.phone}
               onChange={e => setCustomer({...customer, phone: e.target.value})}
             />
-            
+
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 safe-area-pb z-20">
               <div className="max-w-lg mx-auto">
                 <Button fullWidth type="submit">
@@ -255,23 +300,23 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Date</span>
-                <span className="font-medium text-gray-900">{fmtDate(selectedSlot.startTime)}</span>
+                <span className="font-medium text-gray-900">{fmtDate(selectedSlot.start_time)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Time</span>
-                <span className="font-medium text-gray-900">{fmtTime(selectedSlot.startTime)}</span>
+                <span className="font-medium text-gray-900">{fmtTime(selectedSlot.start_time)}</span>
               </div>
               <div className="h-px bg-gray-200 my-2"></div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Total</span>
-                <span className="text-gray-900">{fmtMoney(selectedService.totalPrice)}</span>
+                <span className="text-gray-900">{fmtMoney(selectedService.total_price)}</span>
               </div>
               <div className="flex justify-between text-base font-semibold text-primary-700">
                 <span>Due Now (Deposit)</span>
-                <span>{fmtMoney(selectedService.depositAmount)}</span>
+                <span>{fmtMoney(selectedService.deposit_amount)}</span>
               </div>
-              {selectedService.depositAmount < selectedService.totalPrice && (
-                 <p className="text-xs text-gray-500 text-right mt-1">Remaining {fmtMoney(selectedService.totalPrice - selectedService.depositAmount)} due at appointment.</p>
+              {selectedService.deposit_amount < selectedService.total_price && (
+                 <p className="text-xs text-gray-500 text-right mt-1">Remaining {fmtMoney(selectedService.total_price - selectedService.deposit_amount)} due at appointment.</p>
               )}
             </div>
 
@@ -281,7 +326,7 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
                   <Lock className="h-3 w-3" />
                   <span>Secure SSL Encryption</span>
                </div>
-               
+
                <Input label="Card Number" placeholder="4242 4242 4242 4242" />
                <div className="grid grid-cols-2 gap-4">
                   <Input label="Expiry" placeholder="MM/YY" />
@@ -291,13 +336,13 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
             </div>
 
             <div className="pt-4">
-              <Button 
-                fullWidth 
-                onClick={handlePayment} 
+              <Button
+                fullWidth
+                onClick={handlePayment}
                 isLoading={isProcessing}
                 variant="primary"
               >
-                Pay {fmtMoney(selectedService.depositAmount)} & Confirm
+                Pay {fmtMoney(selectedService.deposit_amount)} & Confirm
               </Button>
               <div className="mt-6 flex justify-center">
                  <div className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold flex items-center gap-1">

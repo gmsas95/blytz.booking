@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShieldCheck, ArrowRight, Zap, Globe, LayoutGrid, CheckCircle2, TrendingUp } from 'lucide-react';
-import { MOCK_BUSINESSES } from '../constants';
-import { Business } from '../types';
+import { api, Business } from '../api';
 
 interface SaaSLandingProps {
   onSelectBusiness: (business: Business) => void;
@@ -9,14 +8,35 @@ interface SaaSLandingProps {
 }
 
 export const SaaSLanding: React.FC<SaaSLandingProps> = ({ onSelectBusiness, onOperatorLogin }) => {
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      try {
+        setLoading(true);
+        const data = await api.getBusinesses();
+        setBusinesses(data);
+      } catch (err) {
+        console.error('Failed to fetch businesses:', err);
+        setError('Failed to load businesses. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBusinesses();
+  }, []);
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans selection:bg-primary-500 selection:text-black">
       {/* Background Grid Texture */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.07]" 
-           style={{ 
-             backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', 
-             backgroundSize: '50px 50px' 
-           }} 
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.07]"
+           style={{
+             backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
+             backgroundSize: '50px 50px'
+           }}
       />
 
       {/* Header */}
@@ -29,8 +49,8 @@ export const SaaSLanding: React.FC<SaaSLandingProps> = ({ onSelectBusiness, onOp
             <span className="text-xl font-bold tracking-tighter">BLYTZ<span className="text-zinc-500">.CLOUD</span></span>
           </div>
           <div className="flex items-center gap-6">
-            <button 
-                onClick={onOperatorLogin} 
+            <button
+                onClick={onOperatorLogin}
                 className="hidden sm:flex text-sm font-medium text-zinc-400 hover:text-white transition-colors"
             >
               Operator Login
@@ -49,14 +69,14 @@ export const SaaSLanding: React.FC<SaaSLandingProps> = ({ onSelectBusiness, onOp
             <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
             V2.0 LIVE: MULTI-TENANT ENGINE
           </div>
-          
+
           <h1 className="text-6xl sm:text-8xl md:text-9xl font-black tracking-tighter text-white leading-[0.9] mb-8">
             NO DEPOSIT.<br />
             <span className="text-zinc-800 stroke-text">NO BOOKING.</span>
           </h1>
-          
+
           <p className="text-lg sm:text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
-            Stop chasing invoices. The cloud-based booking management solution for freelancers that forces upfront payment. 
+            Stop chasing invoices. The cloud-based booking management solution for freelancers that forces upfront payment.
             If they don't pay, they don't get the slot. Simple.
           </p>
 
@@ -93,53 +113,61 @@ export const SaaSLanding: React.FC<SaaSLandingProps> = ({ onSelectBusiness, onOp
             </p>
           </div>
           <div className="text-right hidden md:block">
-            <div className="text-zinc-500 font-mono text-sm">3 VERTICALS AVAILABLE</div>
+            <div className="text-zinc-500 font-mono text-sm">{businesses.length} VERTICALS AVAILABLE</div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-zinc-800 bg-zinc-900">
-          {MOCK_BUSINESSES.map((biz, idx) => (
-            <div 
-              key={biz.id} 
-              onClick={() => onSelectBusiness(biz)}
-              className={`
-                group relative p-8 cursor-pointer transition-all duration-300 hover:bg-zinc-800
-                ${idx !== MOCK_BUSINESSES.length - 1 ? 'border-b md:border-b-0 md:border-r border-zinc-800' : ''}
-              `}
-            >
-              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <ArrowRight className="text-primary-500 -rotate-45 group-hover:rotate-0 transition-transform duration-300" />
-              </div>
+        {loading ? (
+          <div className="text-center py-20 text-zinc-500">Loading businesses...</div>
+        ) : error ? (
+          <div className="text-center py-20 text-red-500">{error}</div>
+        ) : businesses.length === 0 ? (
+          <div className="text-center py-20 text-zinc-500">No businesses available yet.</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-zinc-800 bg-zinc-900">
+            {businesses.map((biz, idx) => (
+              <div
+                key={biz.id}
+                onClick={() => onSelectBusiness(biz)}
+                className={`
+                  group relative p-8 cursor-pointer transition-all duration-300 hover:bg-zinc-800
+                  ${idx !== businesses.length - 1 ? 'border-b md:border-b-0 md:border-r border-zinc-800' : ''}
+                `}
+              >
+                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ArrowRight className="text-primary-500 -rotate-45 group-hover:rotate-0 transition-transform duration-300" />
+                </div>
 
-              <div className="mb-8">
-                  <div className={`
-                    w-12 h-12 flex items-center justify-center rounded-sm text-lg font-bold mb-4
-                    ${biz.vertical === 'Automotive' ? 'bg-blue-600 text-white' : 
-                      biz.vertical === 'Wellness' ? 'bg-emerald-500 text-black' : 
-                      biz.vertical === 'Creative' ? 'bg-violet-600 text-white' : 'bg-zinc-100 text-black'
-                    }
-                  `}>
-                    {biz.name.charAt(0)}
-                  </div>
-                  <div className="inline-block px-2 py-1 bg-zinc-950 text-zinc-500 border border-zinc-800 text-[10px] font-mono uppercase tracking-wider mb-2">
-                    {biz.vertical}
-                  </div>
-                  <h3 className="text-xl font-bold text-white group-hover:text-primary-500 transition-colors">
-                    {biz.name}
-                  </h3>
-              </div>
-              
-              <p className="text-zinc-400 text-sm leading-relaxed mb-8 h-10">
-                {biz.description}
-              </p>
+                <div className="mb-8">
+                    <div className={`
+                      w-12 h-12 flex items-center justify-center rounded-sm text-lg font-bold mb-4
+                      ${biz.vertical === 'Automotive' ? 'bg-blue-600 text-white' :
+                        biz.vertical === 'Wellness' ? 'bg-emerald-500 text-black' :
+                        biz.vertical === 'Creative' ? 'bg-violet-600 text-white' : 'bg-zinc-100 text-black'
+                      }
+                    `}>
+                      {biz.name.charAt(0)}
+                    </div>
+                    <div className="inline-block px-2 py-1 bg-zinc-950 text-zinc-500 border border-zinc-800 text-[10px] font-mono uppercase tracking-wider mb-2">
+                      {biz.vertical}
+                    </div>
+                    <h3 className="text-xl font-bold text-white group-hover:text-primary-500 transition-colors">
+                      {biz.name}
+                    </h3>
+                </div>
 
-              <div className="flex items-center text-xs font-bold tracking-widest uppercase text-zinc-500 group-hover:text-white transition-colors">
-                 <span>Enter Booking Flow</span>
-                 <div className="h-[1px] bg-zinc-700 w-8 ml-3 group-hover:w-16 group-hover:bg-primary-500 transition-all"></div>
+                <p className="text-zinc-400 text-sm leading-relaxed mb-8 h-10">
+                  {biz.description}
+                </p>
+
+                <div className="flex items-center text-xs font-bold tracking-widest uppercase text-zinc-500 group-hover:text-white transition-colors">
+                   <span>Enter Booking Flow</span>
+                   <div className="h-[1px] bg-zinc-700 w-8 ml-3 group-hover:w-16 group-hover:bg-primary-500 transition-all"></div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Grid Features */}
@@ -179,7 +207,7 @@ export const SaaSLanding: React.FC<SaaSLandingProps> = ({ onSelectBusiness, onOp
           © 2024 BLYTZ.CLOUD INC. SHIP FAST OR DIE TRYING.
         </p>
       </footer>
-      
+
       {/* CSS Helper for stroke text effect since tailwind doesn't have it native */}
       <style>{`
         .stroke-text {
