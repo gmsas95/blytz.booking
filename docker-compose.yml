@@ -1,0 +1,19 @@
+services:
+  blytz-cloud:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blytz-cloud
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    labels:
+      # Dokploy labels (optional - helps with organization)
+      - "dokploy.description=Blytz.Cloud Booking Management"
+      - "dokploy.name=blytz-cloud"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
