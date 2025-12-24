@@ -24,9 +24,9 @@ export const SaaSLanding: React.FC<SaaSLandingProps> = ({ onSelectBusiness, onOp
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-primary-500 h-8 w-8 flex items-center justify-center rounded-sm text-black font-black text-xl">
-              D
+              B
             </div>
-            <span className="text-xl font-bold tracking-tighter">DEPOSIT<span className="text-zinc-500">FIRST</span></span>
+            <span className="text-xl font-bold tracking-tighter">BLYTZ<span className="text-zinc-500">.CLOUD</span></span>
           </div>
           <div className="flex items-center gap-6">
             <button 
@@ -56,7 +56,7 @@ export const SaaSLanding: React.FC<SaaSLandingProps> = ({ onSelectBusiness, onOp
           </h1>
           
           <p className="text-lg sm:text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
-            Stop chasing invoices. The vertical-agnostic booking engine that forces upfront payment. 
+            Stop chasing invoices. The cloud-based booking management solution for freelancers that forces upfront payment. 
             If they don't pay, they don't get the slot. Simple.
           </p>
 
@@ -89,7 +89,7 @@ export const SaaSLanding: React.FC<SaaSLandingProps> = ({ onSelectBusiness, onOp
               CHOOSE YOUR FIGHTER
             </h2>
             <p className="text-zinc-400 max-w-md">
-              See how DepositFirst adapts to any service vertical. Select a preset below to enter the booking flow.
+              See how Blytz.Cloud adapts to any service vertical. Select a preset below to enter the booking flow.
             </p>
           </div>
           <div className="text-right hidden md:block">
@@ -176,7 +176,7 @@ export const SaaSLanding: React.FC<SaaSLandingProps> = ({ onSelectBusiness, onOp
 
       <footer className="py-12 px-6 border-t border-zinc-800 bg-zinc-950 text-center relative z-10">
         <p className="text-zinc-600 text-sm font-mono">
-          © 2024 DEPOSITFIRST INC. SHIP FAST OR DIE TRYING.
+          © 2024 BLYTZ.CLOUD INC. SHIP FAST OR DIE TRYING.
         </p>
       </footer>
       

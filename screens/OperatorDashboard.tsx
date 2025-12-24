@@ -44,9 +44,9 @@ export const OperatorDashboard: React.FC<OperatorDashboardProps> = ({ onLogout }
       <aside className="w-full md:w-64 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col h-auto md:h-screen sticky top-0">
         <div className="p-6 flex items-center gap-2 border-b border-gray-100">
           <div className="h-8 w-8 bg-primary-500 rounded-lg flex items-center justify-center text-white font-bold">
-            D
+            B
           </div>
-          <span className="font-bold text-lg tracking-tight">DepositFirst</span>
+          <span className="font-bold text-lg tracking-tight">Blytz.Cloud</span>
         </div>
 
         <div className="px-4 py-6 space-y-1 flex-1">
@@ -299,7 +299,7 @@ export const OperatorDashboard: React.FC<OperatorDashboardProps> = ({ onLogout }
                          </div>
                          <div>
                             <p className="font-bold text-green-900 text-sm">Stripe Connected</p>
-                            <p className="text-xs text-green-700">Payouts active • DepositFirst fees: 1.5%</p>
+                            <p className="text-xs text-green-700">Payouts active • Blytz fees: 1.5%</p>
                          </div>
                       </div>
                       <Button variant="outline" className="text-xs h-8 bg-white">Manage Payouts</Button>

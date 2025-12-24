@@ -1,5 +1,5 @@
 {
-  "name": "DepositFirst Booking",
-  "description": "A vertical-agnostic, deposit-first booking platform for service operators. Enforces payment before confirmation.",
+  "name": "Blytz.Cloud",
+  "description": "A cloud based booking management solution for freelancers. Enforces payment before confirmation.",
   "requestFramePermissions": []
 }

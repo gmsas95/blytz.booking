@@ -301,7 +301,7 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
               </Button>
               <div className="mt-6 flex justify-center">
                  <div className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold flex items-center gap-1">
-                    Powered by DepositFirst
+                    Powered by Blytz.Cloud
                  </div>
               </div>
             </div>
