@@ -1,0 +1,5 @@
+{
+  "name": "DepositFirst Booking",
+  "description": "A vertical-agnostic, deposit-first booking platform for service operators. Enforces payment before confirmation.",
+  "requestFramePermissions": []
+}
