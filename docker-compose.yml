@@ -4,15 +4,21 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: blytz-cloud
-    ports:
-      - "3000:80"
     restart: unless-stopped
     labels:
-      # Dokploy labels (optional - helps with organization)
-      - "dokploy.description=Blytz.Cloud Booking Management"
-      - "dokploy.name=blytz-cloud"
+      # Traefik labels
+      - "traefik.enable=true"
+      - "traefik.http.routers.blytz-cloud.rule=Host(`your-domain.com`)"
+      - "traefik.http.routers.blytz-cloud.entrypoints=websecure"
+      - "traefik.http.routers.blytz-cloud.tls=true"
+      - "traefik.http.services.blytz-cloud.loadbalancer.server.port=80"
+      # Optional: Enable HTTP to HTTPS redirect
+      - "traefik.http.routers.blytz-cloud-http.rule=Host(`your-domain.com`)"
+      - "traefik.http.routers.blytz-cloud-http.entrypoints=web"
+      - "traefik.http.routers.blytz-cloud-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

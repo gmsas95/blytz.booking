@@ -15,20 +15,22 @@ COPY . .
 # Build the app
 RUN npm run build
 
-# Production stage with nginx
-FROM nginx:alpine
+# Production stage - serve static files with Node
+FROM node:22-alpine
 
-# Install wget for healthcheck
-RUN apk add --no-cache wget
+WORKDIR /app
+
+# Install dependencies
+RUN apk add --no-cache curl
+
+# Install a lightweight static file server
+RUN npm install -g serve
 
 # Copy built assets from builder
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Copy nginx config for SPA routing
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist ./dist
 
 # Expose port 80
 EXPOSE 80
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Serve the static files
+CMD ["serve", "-s", "dist", "-l", "80", "--no-clipboard"]

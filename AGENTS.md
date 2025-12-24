@@ -164,28 +164,22 @@ Currently no tests, no test files, no test runner configured. This is a demo/pro
 ## Docker & Dokploy Deployment
 
 ### Files Created
-- `Dockerfile`: Multi-stage build (Node build → Nginx serve)
-- `nginx.conf`: Nginx configuration with SPA routing support
-- `docker-compose.yml`: Service definition for Dokploy
+- `Dockerfile`: Multi-stage build (Node build → Node serve with `serve` package)
+- `docker-compose.yml`: Service definition with Traefik labels
 - `.dockerignore`: Optimizes build context
 
 ### Build Process
 1. **Builder Stage**: Uses Node.js 22 Alpine to install deps and run `npm run build`
-2. **Production Stage**: Serves static files with Nginx Alpine
-3. **Output**: Static files in `/dist` copied to Nginx's HTML directory
+2. **Production Stage**: Serves static files with `serve` package (lightweight Node.js static server)
+3. **Output**: Static files in `/dist` served on port 80
 
-### Nginx Configuration
-- Port: 80 (exposed)
-- SPA routing: All non-static routes redirect to `index.html`
-- Static caching: 1 year for `.js`, `.css`, images, fonts
-- Health check: `/health` endpoint
-- Security headers: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
-
-### Dokploy Setup
+### Dokploy Setup with Traefik
 1. Connect your Git repository to Dokploy
 2. Use `docker-compose.yml` as the deployment configuration
-3. Set environment variable `GEMINI_API_KEY` in Dokploy's env vars section
-4. Deploy - Dokploy will build and run the container
+3. Update `your-domain.com` in Traefik labels to your actual domain
+4. Set environment variable `GEMINI_API_KEY` in Dokploy's env vars section
+5. Deploy - Dokploy will build and run the container
+6. Traefik will automatically route traffic to the container
 
 ### Environment Variables
 Only required env var:
