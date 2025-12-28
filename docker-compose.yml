@@ -75,8 +75,6 @@ services:
       - backend
     networks:
       - blytz-network
-    ports:
-      - "80:80"
 
 networks:
   blytz-network:
