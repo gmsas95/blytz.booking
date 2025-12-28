@@ -12,6 +12,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - blytz-network
+      - dokploy-network
+      - blytzcloud-frontend-trfvov
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -28,6 +30,8 @@ services:
       - redis_data:/data
     networks:
       - blytz-network
+      - dokploy-network
+      - blytzcloud-frontend-trfvov
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -62,6 +66,7 @@ services:
     networks:
       - blytz-network
       - dokploy-network
+      - blytzcloud-frontend-trfvov
 
   # React Frontend
   blytz-cloud:
@@ -77,6 +82,7 @@ services:
     networks:
       - blytz-network
       - dokploy-network
+      - blytzcloud-frontend-trfvov
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
       interval: 30s
@@ -91,6 +97,9 @@ networks:
   dokploy-network:
     external: true
     name: dokploy-network
+  blytzcloud-frontend-trfvov:
+    name: blytzcloud-frontend-trfvov
+    external: true
 
 volumes:
   postgres_data:
