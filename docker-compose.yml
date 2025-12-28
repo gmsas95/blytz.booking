@@ -75,6 +75,8 @@ services:
       - backend
     networks:
       - blytz-network
+    expose:
+      - "80"
 
 networks:
   blytz-network:
