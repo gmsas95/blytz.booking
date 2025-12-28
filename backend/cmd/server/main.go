@@ -63,7 +63,7 @@ func main() {
 	{
 		// Businesses
 		v1.GET("/businesses", handler.ListBusinesses)
-		v1.GET("/businesses/:id", handler.GetBusiness)
+		v1.GET("/businesses/:businessId", handler.GetBusiness)
 
 		// Services
 		v1.GET("/businesses/:businessId/services", handler.GetServicesByBusiness)

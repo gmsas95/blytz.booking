@@ -35,7 +35,7 @@ func (h *Handler) ListBusinesses(c *gin.Context) {
 }
 
 func (h *Handler) GetBusiness(c *gin.Context) {
-	id := c.Param("id")
+	id := c.Param("businessId")
 
 	var business models.Business
 	if err := h.Repo.DB.Where("id = ?", id).First(&business).Error; err != nil {
