@@ -2,7 +2,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: blytz-postgres
+    container_name: blytzbooking-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
@@ -23,7 +23,7 @@ services:
   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: blytz-redis
+    container_name: blytzbooking-redis
     restart: unless-stopped
     command: redis-server --appendonly yes
     volumes:
@@ -43,7 +43,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: blytz-backend
+    container_name: blytzbooking-backend
     restart: unless-stopped
     environment:
       SERVER_PORT: 3001
@@ -73,7 +73,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: blytz-frontend
+    container_name: blytzbooking-frontend
     restart: unless-stopped
     environment:
       VITE_API_URL: https://api.blytz.cloud
