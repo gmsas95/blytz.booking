@@ -72,7 +72,7 @@ services:
       - "traefik.http.middlewares.blytz-api-strip.stripprefix.prefixes=/api"
 
   # React Frontend
-  frontend:
+  blytz-cloud:
     build:
       context: .
       dockerfile: Dockerfile
