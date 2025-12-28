@@ -63,13 +63,6 @@ services:
       - blytz-network
     expose:
       - "8080"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.blytz-backend.rule=Host(`api.blytz.cloud`)"
-      - "traefik.http.routers.blytz-backend.entrypoints=websecure"
-      - "traefik.http.routers.blytz-backend.tls=true"
-      - "traefik.http.routers.blytz-backend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.blytz-backend.loadbalancer.server.port=8080"
 
   # React Frontend
   blytz-cloud:
@@ -79,7 +72,7 @@ services:
     container_name: blytz-frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: http://backend:8080
+      VITE_API_URL: https://api.blytz.cloud
     depends_on:
       - backend
     networks:
@@ -92,13 +85,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.blytz-frontend.rule=Host(`blytz.cloud`)"
-      - "traefik.http.routers.blytz-frontend.entrypoints=websecure"
-      - "traefik.http.routers.blytz-frontend.tls=true"
-      - "traefik.http.routers.blytz-frontend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.blytz-frontend.loadbalancer.server.port=80"
 
 networks:
   blytz-network:
