@@ -61,8 +61,7 @@ services:
         condition: service_healthy
     networks:
       - blytz-network
-    expose:
-      - "3001"
+      - dokploy-network
 
   # React Frontend
   blytz-cloud:
@@ -77,8 +76,7 @@ services:
       - backend
     networks:
       - blytz-network
-    expose:
-      - "3000"
+      - dokploy-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80"]
       interval: 30s
@@ -89,6 +87,10 @@ services:
 networks:
   blytz-network:
     driver: bridge
+    internal: false
+  dokploy-network:
+    external: true
+    name: dokploy-network
 
 volumes:
   postgres_data:
