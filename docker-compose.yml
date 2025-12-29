@@ -9,11 +9,9 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
       POSTGRES_DB: ${DB_NAME:-blytz}
     volumes:
-      - blytzbooking_postgres_data:/var/lib/postgresql/data
+      - blytzbooking_persistent_postgres_data:/var/lib/postgresql/data
     networks:
-      - blytz-network
-      - dokploy-network
-      - blytzcloud-frontend-trfvov
+      - blytzbooking-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -27,11 +25,9 @@ services:
     restart: unless-stopped
     command: redis-server --appendonly yes
     volumes:
-      - blytzbooking_redis_data:/data
+      - blytzbooking_persistent_redis_data:/data
     networks:
-      - blytz-network
-      - dokploy-network
-      - blytzcloud-frontend-trfvov
+      - blytzbooking-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -64,9 +60,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - blytz-network
-      - dokploy-network
-      - blytzcloud-frontend-trfvov
+      - blytzbooking-network
     labels:
       - traefik.enable=true
       - traefik.http.routers.blytz-backend.rule=Host(`api.blytz.cloud`)
@@ -87,9 +81,7 @@ services:
     depends_on:
       - backend
     networks:
-      - blytz-network
-      - dokploy-network
-      - blytzcloud-frontend-trfvov
+      - blytzbooking-network
     labels:
       - traefik.enable=true
       - traefik.http.routers.blytz-frontend.rule=Host(`blytz.cloud`)
@@ -105,16 +97,13 @@ services:
       start_period: 40s
 
 networks:
-  blytz-network:
+  blytzbooking-network:
     driver: bridge
-    internal: false
-  dokploy-network:
-    external: true
-    name: dokploy-network
-  blytzcloud-frontend-trfvov:
-    name: blytzcloud-frontend-trfvov
-    external: true
 
 volumes:
-  blytzbooking_postgres_data:
-  blytzbooking_redis_data:
+  blytzbooking_persistent_postgres_data:
+    name: blytzbooking_persistent_postgres_data
+    driver: local
+  blytzbooking_persistent_redis_data:
+    name: blytzbooking_persistent_redis_data
+    driver: local
