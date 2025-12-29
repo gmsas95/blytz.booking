@@ -23,7 +23,7 @@ services:
   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: blytzbooking-redis
+    container_name: redis
     restart: unless-stopped
     command: redis-server --appendonly yes
     volumes:
@@ -43,7 +43,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: blytzbooking-backend
+    container_name: backend
     restart: unless-stopped
     environment:
       SERVER_PORT: 3001
@@ -73,7 +73,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: blytzbooking-frontend
+    container_name: blytz-cloud
     restart: unless-stopped
     environment:
       VITE_API_URL: https://api.blytz.cloud

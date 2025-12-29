@@ -59,6 +59,14 @@ func (r *Repository) AutoMigrate() error {
 		&models.Slot{},
 		&models.Booking{},
 		&models.User{},
+		&models.Customer{},
+		&models.Payment{},
+		&models.Subscription{},
+		&models.BusinessSettings{},
+		&models.BookingHistory{},
+		&models.RecurringSchedule{},
+		&models.Webhook{},
+		&models.RefreshToken{},
 	)
 }
 

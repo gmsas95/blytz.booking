@@ -2,81 +2,80 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"blytz.cloud/backend/config"
-	"blytz.cloud/backend/internal/handlers"
+	"blytz.cloud/backend/internal/controllers"
+	"blytz.cloud/backend/internal/middleware"
 	"blytz.cloud/backend/internal/repository"
+	"blytz.cloud/backend/internal/services"
+	"blytz.cloud/backend/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// Load configuration
 	cfg := config.LoadConfig()
 
-	// Set Gin mode
 	if cfg.Server.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	// Initialize repository
 	repo, err := repository.NewRepository(cfg)
 	if err != nil {
 		log.Fatalf("Failed to initialize repository: %v", err)
 	}
 
-	// Run migrations and seed data
 	if err := repo.AutoMigrate(); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
-	if err := repo.SeedData(); err != nil {
-		log.Printf("Warning: Failed to seed data: %v", err)
-	}
+	jwtManager := utils.NewJWTManager(cfg.JWT.Secret)
 
-	// Initialize handlers
-	handler := handlers.NewHandler(repo)
+	authMiddleware := middleware.NewAuthMiddleware(jwtManager)
+	rateLimitMiddleware := middleware.NewRateLimitMiddleware(repo.Redis)
 
-	// Setup Gin router
-	r := gin.Default()
+	authService := services.NewAuthService(
+		repository.NewUserRepository(repo.DB),
+		repository.NewRefreshTokenRepository(repo.DB),
+		jwtManager,
+		repo.DB,
+	)
 
-	// CORS middleware
-	r.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+	authController := controllers.NewAuthController(authService)
 
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
+	r := gin.New()
 
-		c.Next()
+	r.Use(middleware.Recovery())
+	r.Use(middleware.RequestID())
+	r.Use(middleware.Logger())
+	r.Use(middleware.CORS())
+	r.Use(rateLimitMiddleware.Limit(100, time.Minute))
+
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "healthy", "version": "1.0.0"})
 	})
 
-	// Health check
-	r.GET("/health", handler.HealthCheck)
-
-	// API v1 routes
-	v1 := r.Group("/api/v1")
+	public := r.Group("/api/v1")
 	{
-		// Businesses
-		v1.GET("/businesses", handler.ListBusinesses)
-		v1.GET("/businesses/:businessId", handler.GetBusiness)
+		auth := public.Group("/auth")
+		{
+			auth.POST("/register", authController.Register)
+			auth.POST("/login", authController.Login)
+		}
 
-		// Services
-		v1.GET("/businesses/:businessId/services", handler.GetServicesByBusiness)
-
-		// Slots
-		v1.GET("/businesses/:businessId/slots", handler.GetSlotsByBusiness)
-
-		// Bookings
-		v1.POST("/bookings", handler.CreateBooking)
-		v1.GET("/businesses/:businessId/bookings", handler.ListBookings)
+		protected := public.Group("")
+		protected.Use(authMiddleware.RequireAuth())
+		{
+			auth := protected.Group("/auth")
+			{
+				auth.POST("/logout", authController.Logout)
+				auth.POST("/refresh", authController.RefreshToken)
+				auth.GET("/me", authController.GetMe)
+			}
+		}
 	}
 
-	// Start server
 	log.Printf("Starting server on port %s...", cfg.Server.Port)
 	if err := r.Run(":" + cfg.Server.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
