@@ -85,14 +85,14 @@ class ApiClient {
     return this.request<Business>(`/api/v1/businesses/${id}`);
   }
 
-  // Services
+  // Services (deprecated - use getServicesBySlug for public access)
   async getServicesByBusiness(businessId: string): Promise<Service[]> {
-    return this.request<Service[]>(`/api/v1/businesses/${businessId}/services`);
+    return this.request<Service[]>(`/api/v1/admin/businesses/${businessId}/services`);
   }
 
-  // Slots
+  // Slots (deprecated - use getSlotsBySlug for public access)
   async getSlotsByBusiness(businessId: string): Promise<Slot[]> {
-    return this.request<Slot[]>(`/api/v1/businesses/${businessId}/slots`);
+    return this.request<Slot[]>(`/api/v1/admin/businesses/${businessId}/slots`);
   }
 
   // Bookings
@@ -104,7 +104,7 @@ class ApiClient {
   }
 
   async getBookingsByBusiness(businessId: string): Promise<Booking[]> {
-    return this.request<Booking[]>(`/api/v1/businesses/${businessId}/bookings`);
+    return this.request<Booking[]>(`/api/v1/admin/businesses/${businessId}/bookings`);
   }
 
   // Health check
@@ -128,7 +128,7 @@ class ApiClient {
   }
 
   async getMe(): Promise<{ id: string; email: string; name: string; role: string }> {
-    return this.request<{ id: string; email: string; name: string; role: string }>('/api/v1/auth/me', {
+    return this.request<{ id: string; email: string; name: string; role: string }>('/api/v1/admin/auth/me', {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
@@ -136,7 +136,7 @@ class ApiClient {
   }
 
   async logout(): Promise<{ message: string }> {
-    return this.request<{ message: string }>('/api/v1/auth/logout', {
+    return this.request<{ message: string }>('/api/v1/admin/auth/logout', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`,

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ViewState, Business } from './types';
+import { ViewState } from './types';
+import { Business } from './api';
 import { SaaSLanding } from './screens/SaaSLanding';
 import { PublicBooking } from './screens/PublicBooking';
 import { Confirmation } from './screens/Confirmation';

@@ -30,6 +30,10 @@ func main() {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
+	if err := repo.SeedData(); err != nil {
+		log.Fatalf("Failed to seed data: %v", err)
+	}
+
 	jwtManager := utils.NewJWTManager(cfg.JWT.Secret)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)
@@ -109,17 +113,17 @@ func main() {
 			publicBusinesses.GET("/slug/:slug/slots", slotController.ListAvailableSlotsBySlug)
 		}
 
-		protected := public.Group("")
-		protected.Use(authMiddleware.RequireAuth())
+		admin := public.Group("/admin")
+		admin.Use(authMiddleware.RequireAuth())
 		{
-			auth := protected.Group("/auth")
+			auth := admin.Group("/auth")
 			{
 				auth.POST("/logout", authController.Logout)
 				auth.POST("/refresh", authController.RefreshToken)
 				auth.GET("/me", authController.GetMe)
 			}
 
-			businesses := protected.Group("/businesses")
+			businesses := admin.Group("/businesses")
 			{
 				business := businesses.Group("/:id")
 				business.Use(middleware.RequireBusinessOwner())
@@ -157,12 +161,6 @@ func main() {
 						bookings.DELETE("/:id", bookingController.CancelBooking)
 					}
 				}
-			}
-
-			protectedBookings := protected.Group("/bookings")
-			{
-				protectedBookings.PATCH("/:id/status", bookingController.UpdateBookingStatus)
-				protectedBookings.DELETE("/:id", bookingController.CancelBooking)
 			}
 		}
 	}

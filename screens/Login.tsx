@@ -25,7 +25,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
       setLoading(false);
       onLogin();
-    } catch (err: {
+    } catch (err: any) {
       console.error('Login failed:', err);
       setError('Invalid email or password. Please try again.');
       setLoading(false);
