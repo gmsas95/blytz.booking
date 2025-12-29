@@ -42,7 +42,17 @@ func main() {
 		repo.DB,
 	)
 
+	bookingService := services.NewBookingService(
+		repository.NewBookingRepository(repo.DB),
+		repository.NewSlotRepository(repo.DB),
+		repository.NewServiceRepository(repo.DB),
+		repository.NewCustomerRepository(repo.DB),
+		repository.NewBookingHistoryRepository(repo.DB),
+		repo.DB,
+	)
+
 	authController := controllers.NewAuthController(authService)
+	bookingController := controllers.NewBookingController(bookingService)
 
 	r := gin.New()
 
@@ -64,6 +74,11 @@ func main() {
 			auth.POST("/login", authController.Login)
 		}
 
+		bookings := public.Group("/bookings")
+		{
+			bookings.POST("", bookingController.CreateBooking)
+		}
+
 		protected := public.Group("")
 		protected.Use(authMiddleware.RequireAuth())
 		{
@@ -72,6 +87,19 @@ func main() {
 				auth.POST("/logout", authController.Logout)
 				auth.POST("/refresh", authController.RefreshToken)
 				auth.GET("/me", authController.GetMe)
+			}
+
+			bookings := protected.Group("/bookings")
+			{
+				bookings.GET("/:id", bookingController.GetBooking)
+				bookings.PATCH("/:id/status", bookingController.UpdateBookingStatus)
+				bookings.DELETE("/:id", bookingController.CancelBooking)
+
+				businessBookings := protected.Group("/businesses/:businessId/bookings")
+				businessBookings.Use(middleware.RequireBusinessOwner())
+				{
+					businessBookings.GET("", bookingController.ListBookings)
+				}
 			}
 		}
 	}
