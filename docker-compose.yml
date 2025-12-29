@@ -45,8 +45,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_NAME: ${DB_NAME:-blytz}
       DB_SSLMODE: disable
-      REDIS_HOST: blytzbooking-redis
-      REDIS_PORT: 6379
+      REDIS_HOST: blytzbooking-redis:6379
       REDIS_PASSWORD: ""
       REDIS_DB: 0
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
