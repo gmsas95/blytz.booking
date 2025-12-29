@@ -2,14 +2,14 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: postgres
+    container_name: blytzbooking-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
       POSTGRES_DB: ${DB_NAME:-blytz}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - blytzbooking-postgres_data:/var/lib/postgresql/data
     networks:
       - blytz-network
       - dokploy-network
@@ -23,11 +23,11 @@ services:
   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: redis
+    container_name: blytzbooking-redis
     restart: unless-stopped
     command: redis-server --appendonly yes
     volumes:
-      - redis_data:/data
+      - blytzbooking-redis_data:/data
     networks:
       - blytz-network
       - dokploy-network
@@ -43,18 +43,18 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: backend
+    container_name: blytzbooking-backend
     restart: unless-stopped
     environment:
       SERVER_PORT: 3001
       ENV: production
-      DB_HOST: postgres
+      DB_HOST: blytzbooking-postgres
       DB_PORT: 5432
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_NAME: ${DB_NAME:-blytz}
       DB_SSLMODE: disable
-      REDIS_HOST: redis:6379
+      REDIS_HOST: blytzbooking-redis:6379
       REDIS_PASSWORD: ""
       REDIS_DB: 0
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
@@ -73,7 +73,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: blytz-cloud
+    container_name: blytzbooking-frontend
     restart: unless-stopped
     environment:
       VITE_API_URL: https://api.blytz.cloud
@@ -102,5 +102,5 @@ networks:
     external: true
 
 volumes:
-  postgres_data:
-  redis_data:
+  blytzbooking-postgres_data:
+  blytzbooking-redis_data:
