@@ -27,7 +27,7 @@ RUN apk --no-cache add ca-certificates
 COPY --from=builder /app/main .
 
 # Expose port
-EXPOSE 3001
+EXPOSE 3004
 
 # Run binary
 CMD ["./main"]

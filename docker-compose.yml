@@ -46,7 +46,7 @@ services:
     container_name: blytzbooking-backend
     restart: unless-stopped
     environment:
-      SERVER_PORT: 3001
+      SERVER_PORT: 3004
       ENV: production
       DB_HOST: postgres
       DB_PORT: 5432
@@ -73,7 +73,7 @@ services:
       - traefik.http.routers.blytz-backend.entrypoints=websecure
       - traefik.http.routers.blytz-backend.tls=true
       - traefik.http.routers.blytz-backend.tls.certresolver=letsencrypt
-      - traefik.http.services.blytz-backend.loadbalancer.server.port=3001
+      - traefik.http.services.blytz-backend.loadbalancer.server.port=3004
 
   # React Frontend
   blytz-cloud:
@@ -96,9 +96,9 @@ services:
       - traefik.http.routers.blytz-frontend.entrypoints=websecure
       - traefik.http.routers.blytz-frontend.tls=true
       - traefik.http.routers.blytz-frontend.tls.certresolver=letsencrypt
-      - traefik.http.services.blytz-frontend.loadbalancer.server.port=3000
+      - traefik.http.services.blytz-frontend.loadbalancer.server.port=3003
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "curl", "-f", "http://localhost:3003"]
       interval: 30s
       timeout: 10s
       retries: 3
