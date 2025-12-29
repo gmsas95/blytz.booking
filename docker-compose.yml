@@ -37,8 +37,6 @@ services:
       dockerfile: Dockerfile
     container_name: blytzbooking-backend
     restart: unless-stopped
-    ports:
-      - "3001:3001"
     environment:
       SERVER_PORT: 3001
       ENV: production
@@ -60,14 +58,12 @@ services:
       - blytz-network
 
   # React Frontend
-  frontend:
+  blytz-cloud:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: blytzbooking-frontend
     restart: unless-stopped
-    ports:
-      - "3000:3000"
     environment:
       VITE_API_URL: http://localhost:3001
     depends_on:
