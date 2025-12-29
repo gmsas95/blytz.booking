@@ -1,7 +1,6 @@
 version: "3.8"
 
 services:
-  # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
     container_name: blytzbooking-postgres
@@ -16,8 +15,8 @@ services:
       - blytzbooking-postgres_data:/var/lib/postgresql/data
     networks:
       - blytz-network
+      - blytzcloud-frontend-trfvov
 
-  # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: blytzbooking-redis
@@ -29,8 +28,8 @@ services:
       - blytzbooking-redis_data:/data
     networks:
       - blytz-network
+      - blytzcloud-frontend-trfvov
 
-  # Go Backend API
   backend:
     build:
       context: ./backend
@@ -56,8 +55,14 @@ services:
       - redis
     networks:
       - blytz-network
+      - blytzcloud-frontend-trfvov
+    labels:
+      - traefik.http.routers.blytzcloud-frontend-trfvov-backend.rule=Host(`api.blytz.cloud`)
+      - traefik.http.routers.blytzcloud-frontend-trfvov-backend.entrypoints=web
+      - traefik.http.services.blytzcloud-frontend-trfvov-backend.loadbalancer.server.port=3001
+      - traefik.http.routers.blytzcloud-frontend-trfvov-backend.service=blytzcloud-frontend-trfvov-backend
+      - traefik.enable=true
 
-  # React Frontend
   blytz-cloud:
     build:
       context: .
@@ -65,15 +70,25 @@ services:
     container_name: blytzbooking-frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: http://localhost:3001
+      VITE_API_URL: https://api.blytz.cloud
     depends_on:
       - backend
     networks:
       - blytz-network
+      - blytzcloud-frontend-trfvov
+    labels:
+      - traefik.http.routers.blytzcloud-frontend-trfvov-frontend.rule=Host(`blytz.cloud`)
+      - traefik.http.routers.blytzcloud-frontend-trfvov-frontend.entrypoints=web
+      - traefik.http.services.blytzcloud-frontend-trfvov-frontend.loadbalancer.server.port=3000
+      - traefik.http.routers.blytzcloud-frontend-trfvov-frontend.service=blytzcloud-frontend-trfvov-frontend
+      - traefik.enable=true
 
 networks:
   blytz-network:
     driver: bridge
+  blytzcloud-frontend-trfvov:
+    name: blytzcloud-frontend-trfvov
+    external: true
 
 volumes:
   blytzbooking-postgres_data:
