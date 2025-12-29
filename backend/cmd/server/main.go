@@ -121,8 +121,6 @@ func main() {
 
 			businesses := protected.Group("/businesses")
 			{
-				businesses.GET("", businessController.ListBusinesses)
-
 				business := businesses.Group("/:id")
 				business.Use(middleware.RequireBusinessOwner())
 				{
