@@ -102,6 +102,7 @@ func main() {
 
 		publicBusinesses := public.Group("/businesses")
 		{
+			publicBusinesses.GET("", businessController.ListBusinesses)
 			publicBusinesses.GET("/health", func(c *gin.Context) { c.JSON(200, gin.H{"status": "ok"}) })
 			publicBusinesses.GET("/slug/:slug", businessController.GetBySlug)
 			publicBusinesses.GET("/slug/:slug/services", serviceController.ListServicesBySlug)
