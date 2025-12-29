@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
       POSTGRES_DB: ${DB_NAME:-blytz}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - blytzbooking_postgres_data:/var/lib/postgresql/data
     networks:
       - blytz-network
       - dokploy-network
@@ -27,7 +27,7 @@ services:
     restart: unless-stopped
     command: redis-server --appendonly yes
     volumes:
-      - redis_data:/data
+      - blytzbooking_redis_data:/data
     networks:
       - blytz-network
       - dokploy-network
@@ -116,5 +116,5 @@ networks:
     external: true
 
 volumes:
-  postgres_data:
-  redis_data:
+  blytzbooking_postgres_data:
+  blytzbooking_redis_data:
