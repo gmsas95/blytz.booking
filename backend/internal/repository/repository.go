@@ -55,18 +55,18 @@ func NewRepository(cfg *config.Config) (*Repository, error) {
 func (r *Repository) AutoMigrate() error {
 	return r.DB.AutoMigrate(
 		&models.Business{},
+		&models.User{},
+		&models.RefreshToken{},
+		&models.BusinessSettings{},
 		&models.Service{},
 		&models.Slot{},
-		&models.Booking{},
-		&models.User{},
 		&models.Customer{},
+		&models.Booking{},
+		&models.BookingHistory{},
 		&models.Payment{},
 		&models.Subscription{},
-		&models.BusinessSettings{},
-		&models.BookingHistory{},
 		&models.RecurringSchedule{},
 		&models.Webhook{},
-		&models.RefreshToken{},
 	)
 }
 

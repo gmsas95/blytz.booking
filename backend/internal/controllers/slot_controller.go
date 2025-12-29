@@ -110,3 +110,36 @@ func (ctrl *SlotController) DeleteRecurringSchedule(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func (ctrl *SlotController) ListAvailableSlotsBySlug(c *gin.Context) {
+	slug := c.Param("slug")
+	serviceID := c.Query("service_id")
+
+	var startDate, endDate *time.Time
+
+	if startDateStr := c.Query("start_date"); startDateStr != "" {
+		if parsed, err := time.Parse("2006-01-02", startDateStr); err == nil {
+			startDate = &parsed
+		} else {
+			errors.HandleError(c, errors.Validation("Invalid start_date format", err))
+			return
+		}
+	}
+
+	if endDateStr := c.Query("end_date"); endDateStr != "" {
+		if parsed, err := time.Parse("2006-01-02", endDateStr); err == nil {
+			endDate = &parsed
+		} else {
+			errors.HandleError(c, errors.Validation("Invalid end_date format", err))
+			return
+		}
+	}
+
+	slots, err := ctrl.slotService.ListAvailableSlotsBySlug(c.Request.Context(), slug, serviceID, startDate, endDate)
+	if err != nil {
+		errors.HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": slots})
+}

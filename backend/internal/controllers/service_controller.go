@@ -98,3 +98,28 @@ func (ctrl *ServiceController) DeleteService(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func (ctrl *ServiceController) ListServicesBySlug(c *gin.Context) {
+	slug := c.Param("slug")
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+
+	offset := (page - 1) * limit
+
+	services, total, err := ctrl.serviceService.ListServicesBySlug(c.Request.Context(), slug, offset, limit)
+	if err != nil {
+		errors.HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": services,
+		"meta": gin.H{
+			"page":        page,
+			"limit":       limit,
+			"total":       total,
+			"total_pages": (total + int64(limit) - 1) / int64(limit),
+		},
+	})
+}

@@ -83,6 +83,16 @@ func (s *ServiceService) ListServices(ctx context.Context, businessID string, of
 	return s.serviceRepo.ListByBusiness(ctx, businessID, offset, limit)
 }
 
+func (s *ServiceService) ListServicesBySlug(ctx context.Context, slug string, offset, limit int) ([]*models.Service, int64, error) {
+	business, err := s.businessRepo.GetBySlug(ctx, slug)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	businessID := business.ID.String()
+	return s.serviceRepo.ListByBusiness(ctx, businessID, offset, limit)
+}
+
 func (s *ServiceService) UpdateService(ctx context.Context, id string, req *UpdateServiceRequest) (*models.Service, error) {
 	service, err := s.serviceRepo.GetByID(ctx, id)
 	if err != nil {

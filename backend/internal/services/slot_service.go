@@ -10,17 +10,20 @@ import (
 )
 
 type SlotService struct {
-	slotRepo repository.SlotRepository
-	db       *gorm.DB
+	slotRepo     repository.SlotRepository
+	businessRepo repository.BusinessRepository
+	db           *gorm.DB
 }
 
 func NewSlotService(
 	slotRepo repository.SlotRepository,
+	businessRepo repository.BusinessRepository,
 	db *gorm.DB,
 ) *SlotService {
 	return &SlotService{
-		slotRepo: slotRepo,
-		db:       db,
+		slotRepo:     slotRepo,
+		businessRepo: businessRepo,
+		db:           db,
 	}
 }
 
@@ -84,6 +87,25 @@ func (s *SlotService) CreateSlots(ctx context.Context, req *CreateSlotsRequest) 
 
 func (s *SlotService) ListAvailableSlots(ctx context.Context, businessID, serviceID string, startDate, endDate time.Time) ([]*models.Slot, error) {
 	return s.slotRepo.ListAvailable(ctx, businessID, serviceID, startDate, endDate)
+}
+
+func (s *SlotService) ListAvailableSlotsBySlug(ctx context.Context, slug, serviceID string, startDate, endDate *time.Time) ([]*models.Slot, error) {
+	business, err := s.businessRepo.GetBySlug(ctx, slug)
+	if err != nil {
+		return nil, err
+	}
+
+	businessID := business.ID.String()
+
+	var start, end time.Time
+	if startDate != nil {
+		start = *startDate
+	}
+	if endDate != nil {
+		end = *endDate
+	}
+
+	return s.slotRepo.ListAvailable(ctx, businessID, serviceID, start, end)
 }
 
 func (s *SlotService) GetSlot(ctx context.Context, id string) (*models.Slot, error) {

@@ -55,6 +55,7 @@ func main() {
 
 	slotService := services.NewSlotService(
 		repository.NewSlotRepository(repo.DB),
+		repository.NewBusinessRepository(repo.DB),
 		repo.DB,
 	)
 
@@ -103,8 +104,8 @@ func main() {
 		{
 			publicBusinesses.GET("/health", func(c *gin.Context) { c.JSON(200, gin.H{"status": "ok"}) })
 			publicBusinesses.GET("/slug/:slug", businessController.GetBySlug)
-			publicBusinesses.GET("/:slug/services", serviceController.ListServices)
-			publicBusinesses.GET("/:slug/slots", slotController.ListAvailableSlots)
+			publicBusinesses.GET("/:slug/services", serviceController.ListServicesBySlug)
+			publicBusinesses.GET("/:slug/slots", slotController.ListAvailableSlotsBySlug)
 		}
 
 		protected := public.Group("")
