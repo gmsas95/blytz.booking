@@ -1,9 +1,13 @@
+version: "3.8"
+
 services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
     container_name: blytzbooking-postgres
     restart: unless-stopped
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
@@ -12,13 +16,6 @@ services:
       - blytzbooking-postgres_data:/var/lib/postgresql/data
     networks:
       - blytz-network
-      - dokploy-network
-      - blytzcloud-frontend-trfvov
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   # Redis Cache
   redis:
@@ -26,17 +23,12 @@ services:
     container_name: blytzbooking-redis
     restart: unless-stopped
     command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
     volumes:
       - blytzbooking-redis_data:/data
     networks:
       - blytz-network
-      - dokploy-network
-      - blytzcloud-frontend-trfvov
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   # Go Backend API
   backend:
@@ -45,6 +37,8 @@ services:
       dockerfile: Dockerfile
     container_name: blytzbooking-backend
     restart: unless-stopped
+    ports:
+      - "3001:3001"
     environment:
       SERVER_PORT: 3001
       ENV: production
@@ -54,52 +48,36 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_NAME: ${DB_NAME:-blytz}
       DB_SSLMODE: disable
-      REDIS_HOST: blytzbooking-redis:6379
+      REDIS_HOST: blytzbooking-redis
+      REDIS_PORT: 6379
       REDIS_PASSWORD: ""
       REDIS_DB: 0
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - postgres
+      - redis
     networks:
       - blytz-network
-      - dokploy-network
-      - blytzcloud-frontend-trfvov
 
   # React Frontend
-  blytz-cloud:
+  frontend:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: blytzbooking-frontend
     restart: unless-stopped
+    ports:
+      - "3000:3000"
     environment:
-      VITE_API_URL: https://api.blytz.cloud
+      VITE_API_URL: http://localhost:3001
     depends_on:
       - backend
     networks:
       - blytz-network
-      - dokploy-network
-      - blytzcloud-frontend-trfvov
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
 networks:
   blytz-network:
     driver: bridge
-    internal: false
-  dokploy-network:
-    external: true
-    name: dokploy-network
-  blytzcloud-frontend-trfvov:
-    name: blytzcloud-frontend-trfvov
-    external: true
 
 volumes:
   blytzbooking-postgres_data:
