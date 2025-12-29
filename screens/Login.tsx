@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Mail, ArrowRight } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { api } from '../api';
 
 interface LoginProps {
   onLogin: () => void;
@@ -9,32 +10,32 @@ interface LoginProps {
 
 export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [email, setEmail] = useState('');
-  const [sent, setSent] = useState(false);
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    setError(null);
+
+    try {
+      const data = await api.login(email, password);
+      localStorage.setItem('token', data.token);
+
       setLoading(false);
-      setSent(true);
-      // Auto login for demo after a short delay
-      setTimeout(onLogin, 1500);
-    }, 1000);
+      onLogin();
+    } catch (err: {
+      console.error('Login failed:', err);
+      setError('Invalid email or password. Please try again.');
+      setLoading(false);
+    }
   };
 
-  if (sent) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
-        <div className="max-w-md w-full text-center space-y-4">
-           <div className="bg-green-100 rounded-full h-16 w-16 flex items-center justify-center mx-auto text-green-600">
-             <Mail className="h-8 w-8" />
-           </div>
-           <h2 className="text-xl font-bold text-gray-900">Magic Link Sent!</h2>
-           <p className="text-gray-500">Check your inbox at <strong>{email}</strong> to log in.</p>
-           <p className="text-xs text-gray-400 mt-4">(Redirecting to dashboard...)</p>
-        </div>
+        <p>Loading...</p>
       </div>
     );
   }
@@ -48,6 +49,12 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+              {error}
+            </div>
+          )}
+
           <Input 
             label="Email Address" 
             type="email" 
@@ -57,16 +64,25 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             onChange={(e) => setEmail(e.target.value)}
           />
 
+          <Input 
+            label="Password" 
+            type="password" 
+            required 
+            placeholder="•••••••••••••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
           <Button type="submit" fullWidth isLoading={loading} className="gap-2">
-            Send Magic Link <ArrowRight className="h-4 w-4" />
+            Log In <ArrowRight className="h-4 w-4" />
           </Button>
+
+          <div className="text-center">
+            <button type="button" onClick={onLogin} className="text-xs text-gray-400 hover:text-gray-600 underline">
+              Skip (Demo Mode)
+            </button>
+          </div>
         </form>
-        
-        <div className="text-center">
-             <button type="button" onClick={onLogin} className="text-xs text-gray-400 hover:text-gray-600 underline">
-                 Skip (Demo Mode)
-             </button>
-        </div>
       </div>
     </div>
   );

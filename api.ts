@@ -111,6 +111,51 @@ class ApiClient {
   async healthCheck(): Promise<{ status: string }> {
     return this.request<{ status: string }>('/health');
   }
+
+  // Auth
+  async register(email: string, password: string, name: string): Promise<{ token: string; user: { id: string; email: string; name: string; role: string } }> {
+    return this.request<{ token: string; user: { id: string; email: string; name: string; role: string } }>('/api/v1/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, name }),
+    });
+  }
+
+  async login(email: string, password: string): Promise<{ token: string; user: { id: string; email: string; name: string; role: string } }> {
+    return this.request<{ token: string; user: { id: string; email: string; name: string; role: string } }>('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  }
+
+  async getMe(): Promise<{ id: string; email: string; name: string; role: string }> {
+    return this.request<{ id: string; email: string; name: string; role: string }>('/api/v1/auth/me', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+  }
+
+  async logout(): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/api/v1/auth/logout', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+  }
+
+  // Slug-based routes (public)
+  async getBusinessBySlug(slug: string): Promise<Business> {
+    return this.request<Business>(`/api/v1/businesses/slug/${slug}`);
+  }
+
+  async getServicesBySlug(slug: string): Promise<Service[]> {
+    return this.request<Service[]>(`/api/v1/businesses/slug/${slug}/services`);
+  }
+
+  async getSlotsBySlug(slug: string): Promise<Slot[]> {
+    return this.request<Slot[]>(`/api/v1/businesses/slug/${slug}/slots`);
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);

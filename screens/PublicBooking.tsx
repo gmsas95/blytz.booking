@@ -33,8 +33,8 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
         setLoadingSlots(true);
 
         const [servicesData, slotsData] = await Promise.all([
-          api.getServicesByBusiness(business.id),
-          api.getSlotsByBusiness(business.id),
+          api.getServicesBySlug(business.slug),
+          api.getSlotsBySlug(business.slug),
         ]);
 
         setServices(servicesData);
@@ -48,7 +48,7 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
     };
 
     fetchData();
-  }, [business.id]);
+  }, [business.slug]);
 
   // Helper to format currency
   const fmtMoney = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
