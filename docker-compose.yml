@@ -2,7 +2,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: postgres
+    container_name: blytzbooking-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
@@ -67,6 +67,13 @@ services:
       - blytz-network
       - dokploy-network
       - blytzcloud-frontend-trfvov
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.blytz-backend.rule=Host(`api.blytz.cloud`)
+      - traefik.http.routers.blytz-backend.entrypoints=websecure
+      - traefik.http.routers.blytz-backend.tls=true
+      - traefik.http.routers.blytz-backend.tls.certresolver=letsencrypt
+      - traefik.http.services.blytz-backend.loadbalancer.server.port=3001
 
   # React Frontend
   blytz-cloud:
@@ -83,6 +90,13 @@ services:
       - blytz-network
       - dokploy-network
       - blytzcloud-frontend-trfvov
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.blytz-frontend.rule=Host(`blytz.cloud`)
+      - traefik.http.routers.blytz-frontend.entrypoints=websecure
+      - traefik.http.routers.blytz-frontend.tls=true
+      - traefik.http.routers.blytz-frontend.tls.certresolver=letsencrypt
+      - traefik.http.services.blytz-frontend.loadbalancer.server.port=3000
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
       interval: 30s
