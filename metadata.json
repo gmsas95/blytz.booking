@@ -1,5 +1,8 @@
 {
   "name": "Blytz.Cloud",
-  "description": "A cloud based booking management solution for freelancers. Enforces payment before confirmation.",
+  "description": "A booking management prototype for freelancers. Development stage - NOT production ready. Missing authentication, security, and business logic.",
+  "status": "prototype",
+  "completion": "40%",
+  "warning": "Lacks authentication, proper security, and complete business logic. Demo/prototype only.",
   "requestFramePermissions": []
 }
