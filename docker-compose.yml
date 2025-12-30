@@ -70,7 +70,7 @@ services:
     expose:
       - "3000"
     environment:
-      VITE_API_URL: https://api.blytz.cloud
+      VITE_API_URL: http://api.blytz.cloud
     depends_on:
       - backend
     healthcheck:
