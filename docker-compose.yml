@@ -61,20 +61,20 @@ services:
     networks:
       - dokploy-network
 
-   # React Frontend
+    # React Frontend
   blytz-cloud:
     build:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
     expose:
-      - "3003"
+      - "3000"
     environment:
       VITE_API_URL: http://api.blytz.cloud
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3003"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
       interval: 30s
       timeout: 10s
       retries: 3

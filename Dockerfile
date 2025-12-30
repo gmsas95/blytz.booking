@@ -29,8 +29,8 @@ RUN npm install -g serve
 # Copy built assets from builder
 COPY --from=builder /app/dist ./dist
 
-# Expose port 3003
-EXPOSE 3003
+# Expose port 3000
+EXPOSE 3000
 
 # Serve the static files
-CMD ["serve", "-s", "dist", "-l", "3003", "--no-clipboard"]
+CMD ["serve", "-s", "dist", "-l", "3000", "--no-clipboard"]
