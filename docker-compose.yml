@@ -34,6 +34,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     restart: unless-stopped
+    expose:
+      - "3001"
     environment:
       SERVER_PORT: 3001
       ENV: production
@@ -59,6 +61,8 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
+    expose:
+      - "3000"
     environment:
       VITE_API_URL: https://api.blytz.cloud
     depends_on:
