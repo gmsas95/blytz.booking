@@ -9,8 +9,6 @@ services:
       POSTGRES_DB: ${DB_NAME:-blytz}
     volumes:
       - blytzbooking_persistent_postgres_data:/var/lib/postgresql/data
-    networks:
-      - dokploy-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -24,8 +22,6 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - blytzbooking_persistent_redis_data:/data
-    networks:
-      - dokploy-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -58,10 +54,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    networks:
-      - dokploy-network
 
-    # React Frontend
+   # React Frontend
   blytz-cloud:
     build:
       context: .
@@ -79,15 +73,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    networks:
-      - dokploy-network
 
 volumes:
   blytzbooking_persistent_postgres_data:
     driver: local
   blytzbooking_persistent_redis_data:
     driver: local
-
-networks:
-  dokploy-network:
-    external: true
