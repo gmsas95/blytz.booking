@@ -25,3 +25,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Go binaries
+backend/bin/
+backend/*.exe
+backend/*.exe~
+backend/*.dll
+backend/*.so
+backend/*.dylib
+
+# Go test files
+backend/*.test
+backend/*.out
+
+# Go workspace files
+backend/go.work
+backend/go.work.sum

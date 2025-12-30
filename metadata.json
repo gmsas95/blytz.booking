@@ -1,8 +1,8 @@
 {
   "name": "Blytz.Cloud",
-  "description": "A booking management prototype for freelancers. Development stage - NOT production ready. Missing authentication, security, and business logic.",
+  "description": "A booking management prototype for freelancers. Development stage - NOT production ready. Missing proper security and complete business logic.",
   "status": "prototype",
-  "completion": "40%",
-  "warning": "Lacks authentication, proper security, and complete business logic. Demo/prototype only.",
+  "completion": "75%",
+  "warning": "Lacks proper security, input validation, and complete business logic. Demo/prototype only.",
   "requestFramePermissions": []
 }

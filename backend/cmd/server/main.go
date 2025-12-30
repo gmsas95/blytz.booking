@@ -2,12 +2,15 @@ package main
 
 import (
 	"log"
+	"net/http"
 
 	"blytz.cloud/backend/config"
+	"blytz.cloud/backend/internal/auth"
 	"blytz.cloud/backend/internal/handlers"
 	"blytz.cloud/backend/internal/repository"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func main() {
@@ -61,6 +64,33 @@ func main() {
 	// API v1 routes
 	v1 := r.Group("/api/v1")
 	{
+		// Auth routes (public)
+		v1.POST("/auth/register", handler.Register)
+		v1.POST("/auth/login", handler.Login)
+
+		// Protected routes
+		v1.GET("/auth/me", auth.AuthMiddleware(), func(c *gin.Context) {
+			userID := c.GetString("user_id")
+			userUUID, err := uuid.Parse(userID)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+				return
+			}
+
+			user, err := handler.AuthService.GetByID(userUUID)
+			if err != nil {
+				c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+				return
+			}
+
+			c.JSON(http.StatusOK, gin.H{
+				"id":         user.ID.String(),
+				"email":      user.Email,
+				"name":       user.Name,
+				"created_at": user.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			})
+		})
+
 		// Businesses
 		v1.GET("/businesses", handler.ListBusinesses)
 		v1.GET("/businesses/:businessId", handler.GetBusiness)

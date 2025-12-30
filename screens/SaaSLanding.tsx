@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, ArrowRight, Zap, Globe, LayoutGrid, CheckCircle2, TrendingUp } from 'lucide-react';
 import { api, Business } from '../api';
 import { MOCK_BUSINESSES } from '../constants';
 
-interface SaaSLandingProps {
-  onSelectBusiness: (business: Business) => void;
-  onOperatorLogin: () => void;
-}
-
-export const SaaSLanding: React.FC<SaaSLandingProps> = ({ onSelectBusiness, onOperatorLogin }) => {
+export const SaaSLanding: React.FC = () => {
+  const navigate = useNavigate();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +48,7 @@ export const SaaSLanding: React.FC<SaaSLandingProps> = ({ onSelectBusiness, onOp
           </div>
           <div className="flex items-center gap-6">
             <button
-                onClick={onOperatorLogin}
+                onClick={() => navigate('/login')}
                 className="hidden sm:flex text-sm font-medium text-zinc-400 hover:text-white transition-colors"
             >
               Operator Login
@@ -125,16 +122,16 @@ export const SaaSLanding: React.FC<SaaSLandingProps> = ({ onSelectBusiness, onOp
         ) : businesses.length === 0 ? (
           <div className="text-center py-20 text-zinc-500">No businesses available yet.</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-zinc-800 bg-zinc-900">
-            {businesses.map((biz, idx) => (
-              <div
-                key={biz.id}
-                onClick={() => onSelectBusiness(biz)}
-                className={`
-                  group relative p-8 cursor-pointer transition-all duration-300 hover:bg-zinc-800
-                  ${idx !== businesses.length - 1 ? 'border-b md:border-b-0 md:border-r border-zinc-800' : ''}
-                `}
-              >
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-zinc-800 bg-zinc-900">
+             {businesses.map((biz, idx) => (
+               <div
+                 key={biz.id}
+                 onClick={() => navigate(`/business/${biz.slug}`)}
+                 className={`
+                   group relative p-8 cursor-pointer transition-all duration-300 hover:bg-zinc-800
+                   ${idx !== businesses.length - 1 ? 'border-b md:border-b-0 md:border-r border-zinc-800' : ''}
+                 `}
+               >
                 <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                   <ArrowRight className="text-primary-500 -rotate-45 group-hover:rotate-0 transition-transform duration-300" />
                 </div>

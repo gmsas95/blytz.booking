@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Check, Lock, Clock } from 'lucide-react';
 import { api, Service, Slot, CustomerDetails, Business } from '../api';
 import { Button } from '../components/Button';
@@ -6,15 +7,13 @@ import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { MOCK_SERVICES, MOCK_SLOTS } from '../constants';
 
-interface PublicBookingProps {
-  business: Business;
-  onComplete: (bookingDetails: any) => void;
-  onExit: () => void;
-}
-
 type Step = 'SERVICE' | 'SLOT' | 'DETAILS' | 'PAYMENT';
 
-export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComplete, onExit }) => {
+export const PublicBooking: React.FC = () => {
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const [business, setBusiness] = useState<Business | null>(null);
+  const [loadingBusiness, setLoadingBusiness] = useState(true);
   const [step, setStep] = useState<Step>('SERVICE');
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
@@ -26,8 +25,34 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
   const [loadingServices, setLoadingServices] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(true);
 
+  // Fetch business by slug
+  useEffect(() => {
+    const fetchBusiness = async () => {
+      if (!slug) return;
+
+      try {
+        // Try to find business by slug from businesses list
+        const businesses = await api.getBusinesses();
+        const found = businesses.find(b => b.slug === slug);
+        if (found) {
+          setBusiness(found as Business);
+        } else {
+          console.error('Business not found');
+        }
+      } catch (err) {
+        console.error('Failed to fetch business:', err);
+      } finally {
+        setLoadingBusiness(false);
+      }
+    };
+
+    fetchBusiness();
+  }, [slug]);
+
   // Fetch services and slots when business changes
   useEffect(() => {
+    if (!business) return;
+
     const fetchData = async () => {
       try {
         setLoadingServices(true);
@@ -51,7 +76,7 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
     };
 
     fetchData();
-  }, [business.id]);
+  }, [business]);
 
   // Helper to format currency
   const fmtMoney = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
@@ -82,7 +107,7 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
   };
 
   const handlePayment = async () => {
-    if (!selectedService || !selectedSlot) return;
+    if (!business || !selectedService || !selectedSlot) return;
 
     setIsProcessing(true);
     try {
@@ -97,13 +122,7 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
         total_price: selectedService.total_price,
       });
 
-      onComplete({
-        business,
-        service: selectedService,
-        slot: selectedSlot,
-        customer,
-        booking,
-      });
+      navigate('/confirmation');
     } catch (err) {
       console.error('Failed to create booking:', err);
       alert('Failed to create booking. Please try again.');
@@ -113,7 +132,7 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
   };
 
   const goBack = () => {
-    if (step === 'SERVICE') onExit();
+    if (step === 'SERVICE') navigate('/');
     if (step === 'SLOT') setStep('SERVICE');
     if (step === 'DETAILS') setStep('SLOT');
     if (step === 'PAYMENT') setStep('DETAILS');

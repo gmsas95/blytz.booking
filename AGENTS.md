@@ -12,7 +12,7 @@ Blytz.Cloud is a **booking management prototype** for freelancers and service bu
 - **Database**: PostgreSQL + Redis (cache ready)
 - **Deployment**: Docker + Docker Compose + Dokploy
 
-## Current Status: PROTOTYPE (40% Complete)
+## Current Status: PROTOTYPE (75% Complete)
 
 ### ✅ What's Implemented
 - Basic UI components and booking flow
@@ -20,13 +20,21 @@ Blytz.Cloud is a **booking management prototype** for freelancers and service bu
 - Docker containerization
 - Multi-step booking wizard (UI only)
 - Mock data system with API fallback
+- JWT-based authentication system with password hashing
+- User registration and login endpoints
+- Protected routes with auth middleware
+- Token storage in frontend localStorage
+- **NEW**: Service layer architecture for backend (separation of concerns)
+- **NEW**: Business logic in services (booking validation, slot availability checks)
+- **NEW**: Real React Router implementation with BrowserRouter
+- **NEW**: AuthContext for global authentication state management
+- **NEW**: ProtectedRoute component for route-based access control
 
 ### ❌ Critical Missing Features
-- **Authentication System**: No user registration, login, or session management
 - **Security**: No input validation, rate limiting, or proper error handling
-- **Business Logic**: No booking conflicts, payment processing, or notifications
-- **Frontend Routing**: Not real routing - just state switching
-- **Backend Architecture**: No service layer, direct DB access in handlers
+- **Business Logic**: No payment processing, notifications, or conflict resolution
+- **DTOs**: No dedicated request/response structures
+- **Password Reset**: No forgot password functionality
 
 ## Development Commands
 
@@ -60,10 +68,12 @@ docker-compose up -d --build
 │   └── constants.ts    # Mock data (deprecated)
 ├── backend/             # Go backend API
 │   ├── cmd/server/     # Application entry point
-│   ├── internal/       # Clean architecture attempt
-│   │   ├── handlers/   # HTTP handlers (thin, but direct DB access)
+│   ├── internal/       # Clean architecture with service layer
+│   │   ├── handlers/   # HTTP handlers (thin, use services)
 │   │   ├── models/     # GORM models
-│   │   └── repository/ # Database layer
+│   │   ├── repository/ # Database layer
+│   │   ├── services/   # Business logic and data operations
+│   │   └── auth/       # JWT and password utilities
 │   └── config/         # Configuration
 ├── docker-compose.yml   # Multi-service orchestration
 └── Dockerfile          # Frontend build
@@ -72,40 +82,54 @@ docker-compose up -d --build
 ## Code Patterns & Issues
 
 ### Frontend Issues
-1. **Fake Routing**: `App.tsx` uses view state switching, not real React Router
-2. **Mixed API/Types**: `api.ts` contains both API client AND type definitions
-3. **Mock Data Dependencies**: Components fall back to mock data instead of proper error handling
-4. **No State Management**: All state in top-level component
-5. **No Error Boundaries**: App crashes on API failures
+1. **Mixed API/Types**: `api.ts` contains both API client AND type definitions
+2. **Mock Data Dependencies**: Components fall back to mock data instead of proper error handling
+3. **No Error Boundaries**: App crashes on API failures
 
 ### Backend Issues
-1. **No Service Layer**: Handlers directly access database
-2. **No Authentication**: Zero auth endpoints despite User model existing
-3. **No Validation**: Only basic GORM model validation
-4. **No Business Logic**: Just CRUD operations
-5. **Poor Error Handling**: Generic error messages
+1. **No Validation**: Only basic GORM model validation
+2. **No DTOs**: Request/response structures defined inline
+3. **Poor Error Handling**: Generic error messages
 
 ### Critical Security Problems
 - CORS allows all origins (`*`)
 - No input sanitization
 - No rate limiting
-- No JWT implementation (secret exists but unused)
-- No password hashing
-- No protected routes
+- JWT authentication implemented but not enforced on all routes
 
 ## API Endpoints (Basic CRUD Only)
 
+### Health
 ```
 GET  /health                    # Health check
+```
+
+### Authentication
+```
+POST /api/v1/auth/register     # Register new user
+POST /api/v1/auth/login        # Login user
+GET  /api/v1/auth/me           # Get current user (protected)
+```
+
+### Businesses
+```
 GET  /api/v1/businesses         # List businesses
 GET  /api/v1/businesses/:id     # Get business
+```
+
+### Services & Slots
+```
 GET  /api/v1/businesses/:id/services  # Get services
 GET  /api/v1/businesses/:id/slots    # Get available slots
-POST /api/v1/bookings           # Create booking
+```
+
+### Bookings
+```
+POST /api/v1/bookings           # Create booking (with business logic validation)
 GET  /api/v1/businesses/:id/bookings # List bookings
 ```
 
-**Missing endpoints:** Authentication, user management, payment, notifications, booking management
+**Missing endpoints:** Password reset, payment, notifications, booking management (cancel/reschedule)
 
 ## Environment Setup
 
@@ -121,7 +145,7 @@ DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=your_password
 DB_NAME=blytz
-JWT_SECRET=your-secret-key  # Currently unused
+JWT_SECRET=your-secret-key  # Required for JWT authentication
 ```
 
 ## Development Guidelines

@@ -28,27 +28,27 @@ type Business struct {
 }
 
 type Service struct {
-	ID             uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
-	BusinessID     uuid.UUID `json:"business_id" gorm:"type:uuid;not null"`
-	Name           string    `json:"name" gorm:"not null"`
-	Description    string    `json:"description"`
-	DurationMin    int       `json:"duration_min" gorm:"not null"`
-	TotalPrice     float64   `json:"total_price" gorm:"not null"`
-	DepositAmount  float64   `json:"deposit_amount" gorm:"not null"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID            uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	BusinessID    uuid.UUID `json:"business_id" gorm:"type:uuid;not null"`
+	Name          string    `json:"name" gorm:"not null"`
+	Description   string    `json:"description"`
+	DurationMin   int       `json:"duration_min" gorm:"not null"`
+	TotalPrice    float64   `json:"total_price" gorm:"not null"`
+	DepositAmount float64   `json:"deposit_amount" gorm:"not null"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 	Business      Business  `json:"business" gorm:"foreignKey:BusinessID"`
 }
 
 type Slot struct {
-	ID        uuid.UUID    `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
-	BusinessID uuid.UUID   `json:"business_id" gorm:"type:uuid;not null;index"`
-	StartTime time.Time    `json:"start_time" gorm:"not null;index"`
-	EndTime   time.Time    `json:"end_time" gorm:"not null"`
-	IsBooked  bool         `json:"is_booked" gorm:"default:false"`
-	CreatedAt time.Time    `json:"created_at"`
-	UpdatedAt time.Time    `json:"updated_at"`
-	Business  Business    `json:"business" gorm:"foreignKey:BusinessID"`
+	ID         uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	BusinessID uuid.UUID `json:"business_id" gorm:"type:uuid;not null;index"`
+	StartTime  time.Time `json:"start_time" gorm:"not null;index"`
+	EndTime    time.Time `json:"end_time" gorm:"not null"`
+	IsBooked   bool      `json:"is_booked" gorm:"default:false"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+	Business   Business  `json:"business" gorm:"foreignKey:BusinessID"`
 }
 
 type CustomerDetails struct {
@@ -58,30 +58,31 @@ type CustomerDetails struct {
 }
 
 type Booking struct {
-	ID            uuid.UUID        `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
-	BusinessID    uuid.UUID        `json:"business_id" gorm:"type:uuid;not null;index"`
-	ServiceID     uuid.UUID        `json:"service_id" gorm:"type:uuid;not null"`
-	SlotID        uuid.UUID        `json:"slot_id" gorm:"type:uuid;not null;index"`
-	ServiceName   string           `json:"service_name" gorm:"not null"`
-	SlotTime      time.Time        `json:"slot_time" gorm:"not null"`
-	Customer      CustomerDetails   `json:"customer" gorm:"embedded"`
-	Status        BookingStatus     `json:"status" gorm:"not null;default:'PENDING'"`
-	DepositPaid   float64          `json:"deposit_paid" gorm:"not null"`
-	TotalPrice    float64          `json:"total_price" gorm:"not null"`
-	CreatedAt     time.Time        `json:"created_at"`
-	UpdatedAt     time.Time        `json:"updated_at"`
-	Business      Business         `json:"business" gorm:"foreignKey:BusinessID"`
-	Service       Service          `json:"service" gorm:"foreignKey:ServiceID"`
-	Slot          Slot             `json:"slot" gorm:"foreignKey:SlotID"`
+	ID          uuid.UUID       `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	BusinessID  uuid.UUID       `json:"business_id" gorm:"type:uuid;not null;index"`
+	ServiceID   uuid.UUID       `json:"service_id" gorm:"type:uuid;not null"`
+	SlotID      uuid.UUID       `json:"slot_id" gorm:"type:uuid;not null;index"`
+	ServiceName string          `json:"service_name" gorm:"not null"`
+	SlotTime    time.Time       `json:"slot_time" gorm:"not null"`
+	Customer    CustomerDetails `json:"customer" gorm:"embedded"`
+	Status      BookingStatus   `json:"status" gorm:"not null;default:'PENDING'"`
+	DepositPaid float64         `json:"deposit_paid" gorm:"not null"`
+	TotalPrice  float64         `json:"total_price" gorm:"not null"`
+	CreatedAt   time.Time       `json:"created_at"`
+	UpdatedAt   time.Time       `json:"updated_at"`
+	Business    Business        `json:"business" gorm:"foreignKey:BusinessID"`
+	Service     Service         `json:"service" gorm:"foreignKey:ServiceID"`
+	Slot        Slot            `json:"slot" gorm:"foreignKey:SlotID"`
 }
 
 // User model for operators
 type User struct {
-	ID        uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
-	Email     string    `json:"email" gorm:"uniqueIndex;not null"`
-	Name      string    `json:"name"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID           uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	Email        string    `json:"email" gorm:"uniqueIndex;not null"`
+	Name         string    `json:"name"`
+	PasswordHash string    `json:"-" gorm:"not null"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 // BeforeCreate hook for GORM

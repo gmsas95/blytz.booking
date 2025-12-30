@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LogOut, Calendar, LayoutDashboard, Settings, Plus, Trash2, Download, TrendingUp, DollarSign, Users, ChevronDown, Briefcase, Edit2, CreditCard, Bell, ShieldCheck } from 'lucide-react';
 import { MOCK_BOOKINGS, MOCK_SERVICES, MOCK_BUSINESSES } from '../constants';
 import { BookingStatus, Business } from '../types';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { useAuth } from '../context/AuthContext';
 
-interface OperatorDashboardProps {
-  onLogout: () => void;
-}
-
-export const OperatorDashboard: React.FC<OperatorDashboardProps> = ({ onLogout }) => {
+export const OperatorDashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'BOOKINGS' | 'SERVICES' | 'SETTINGS'>('DASHBOARD');
   // Mock business selection (Simulating DetailPro logged in)
   const [currentBusiness, setCurrentBusiness] = useState<Business>(MOCK_BUSINESSES[0]);
@@ -71,7 +71,7 @@ export const OperatorDashboard: React.FC<OperatorDashboardProps> = ({ onLogout }
         </div>
 
         <div className="p-4 border-t border-gray-100">
-          <button onClick={onLogout} className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-600 transition-colors w-full px-4 py-2">
+          <button onClick={logout} className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-600 transition-colors w-full px-4 py-2">
             <LogOut className="h-4 w-4" />
             Sign Out
           </button>
