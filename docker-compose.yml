@@ -2,7 +2,6 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: blytzbooking-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
@@ -10,8 +9,6 @@ services:
       POSTGRES_DB: ${DB_NAME:-blytz}
     volumes:
       - blytzbooking_persistent_postgres_data:/var/lib/postgresql/data
-    networks:
-      - blytzbooking-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -21,13 +18,10 @@ services:
   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: blytzbooking-redis
     restart: unless-stopped
     command: redis-server --appendonly yes
     volumes:
       - blytzbooking_persistent_redis_data:/data
-    networks:
-      - blytzbooking-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -39,7 +33,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: blytzbooking-backend
     restart: unless-stopped
     environment:
       SERVER_PORT: 3001
@@ -59,36 +52,17 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    networks:
-      - blytzbooking-network
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.blytzbooking-backend.rule=Host(`api.blytz.cloud`)
-      - traefik.http.routers.blytzbooking-backend.entrypoints=websecure
-      - traefik.http.routers.blytzbooking-backend.tls=true
-      - traefik.http.routers.blytzbooking-backend.tls.certresolver=letsencrypt
-      - traefik.http.services.blytzbooking-backend.loadbalancer.server.port=3001
 
   # React Frontend
   blytz-cloud:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: blytzbooking-frontend
     restart: unless-stopped
     environment:
       VITE_API_URL: https://api.blytz.cloud
     depends_on:
       - backend
-    networks:
-      - blytzbooking-network
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.blytzbooking-frontend.rule=Host(`blytz.cloud`)
-      - traefik.http.routers.blytzbooking-frontend.entrypoints=websecure
-      - traefik.http.routers.blytzbooking-frontend.tls=true
-      - traefik.http.routers.blytzbooking-frontend.tls.certresolver=letsencrypt
-      - traefik.http.services.blytzbooking-frontend.loadbalancer.server.port=3000
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
       interval: 30s
@@ -96,14 +70,8 @@ services:
       retries: 3
       start_period: 40s
 
-networks:
-  blytzbooking-network:
-    driver: bridge
-
 volumes:
   blytzbooking_persistent_postgres_data:
-    name: blytzbooking_persistent_postgres_data
     driver: local
   blytzbooking_persistent_redis_data:
-    name: blytzbooking_persistent_redis_data
     driver: local
