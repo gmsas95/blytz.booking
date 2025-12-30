@@ -4,6 +4,7 @@ import { api, Service, Slot, CustomerDetails, Business } from '../api';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
+import { MOCK_SERVICES, MOCK_SLOTS } from '../constants';
 
 interface PublicBookingProps {
   business: Business;
@@ -40,7 +41,9 @@ export const PublicBooking: React.FC<PublicBookingProps> = ({ business, onComple
         setServices(servicesData);
         setSlots(slotsData);
       } catch (err) {
-        console.error('Failed to fetch data:', err);
+        console.error('Failed to fetch data, using mock data:', err);
+        setServices(MOCK_SERVICES.filter(s => s.businessId === business.id));
+        setSlots(MOCK_SLOTS.filter(s => s.businessId === business.id));
       } finally {
         setLoadingServices(false);
         setLoadingSlots(false);

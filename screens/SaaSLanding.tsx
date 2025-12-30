@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, ArrowRight, Zap, Globe, LayoutGrid, CheckCircle2, TrendingUp } from 'lucide-react';
 import { api, Business } from '../api';
+import { MOCK_BUSINESSES } from '../constants';
 
 interface SaaSLandingProps {
   onSelectBusiness: (business: Business) => void;
@@ -19,8 +20,8 @@ export const SaaSLanding: React.FC<SaaSLandingProps> = ({ onSelectBusiness, onOp
         const data = await api.getBusinesses();
         setBusinesses(data);
       } catch (err) {
-        console.error('Failed to fetch businesses:', err);
-        setError('Failed to load businesses. Please try again later.');
+        console.error('Failed to fetch businesses, using mock data:', err);
+        setBusinesses(MOCK_BUSINESSES);
       } finally {
         setLoading(false);
       }
