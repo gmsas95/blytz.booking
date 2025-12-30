@@ -68,13 +68,13 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     expose:
-      - "3000"
+      - "3003"
     environment:
       VITE_API_URL: http://api.blytz.cloud
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "curl", "-f", "http://localhost:3003"]
       interval: 30s
       timeout: 10s
       retries: 3
