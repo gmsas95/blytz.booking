@@ -12,7 +12,7 @@ Blytz.Cloud is a **booking management prototype** for freelancers and service bu
 - **Database**: PostgreSQL + Redis (cache ready)
 - **Deployment**: Docker + Docker Compose + Dokploy
 
-## Current Status: PROTOTYPE (90% Complete)
+## Current Status: PROTOTYPE (95% Complete
 
 ### ✅ What's Implemented
 - Basic UI components and booking flow
@@ -33,12 +33,13 @@ Blytz.Cloud is a **booking management prototype** for freelancers and service bu
 - **Business management** (create, update businesses)
 - **Booking management** (create, list, cancel bookings by business)
 - **Slot management** (create, delete, list slots from frontend)
+- **Email notification system** (SMTP-based, HTML templates)
+- **Password reset** (forgot password flow with token-based reset)
 
 ### ❌ Critical Missing Features
 - **Security**: No rate limiting, no input sanitization
 - **Business Logic**: No payment processing, notifications, or conflict resolution
 - **Booking Management**: No reschedule functionality (cancel works)
-- **Password Reset**: No forgot password functionality
 - **Slot Management**: No bulk creation or recurring slots
 - **Error Handling**: Basic error messages (error boundaries now added)
 
