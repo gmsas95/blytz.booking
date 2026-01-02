@@ -90,6 +90,7 @@ export const OperatorDashboard: React.FC = () => {
         setAvailability(availabilityData);
         setDurationMin((selectedBusiness as any).slotDurationMin || 30);
         setMaxBookings((selectedBusiness as any).maxBookings || 1);
+        setEditingDay({});
       }
     } catch (err) {
       console.error('Failed to fetch data:', err);
