@@ -22,7 +22,7 @@ type UserResponse struct {
 	ID        string `json:"id"`
 	Email     string `json:"email"`
 	Name      string `json:"name"`
-	CreatedAt string `json:"created_at"`
+	CreatedAt string `json:"createdAt"`
 }
 
 // Business DTOs
@@ -33,9 +33,9 @@ type BusinessResponse struct {
 	Slug        string `json:"slug"`
 	Vertical    string `json:"vertical"`
 	Description string `json:"description"`
-	ThemeColor  string `json:"theme_color"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
+	ThemeColor  string `json:"themeColor"`
+	CreatedAt   string `json:"createdAt"`
+	UpdatedAt   string `json:"updatedAt"`
 }
 
 type CreateBusinessRequest struct {
@@ -43,7 +43,7 @@ type CreateBusinessRequest struct {
 	Slug        string `json:"slug" binding:"required"`
 	Vertical    string `json:"vertical" binding:"required"`
 	Description string `json:"description"`
-	ThemeColor  string `json:"theme_color"`
+	ThemeColor  string `json:"themeColor"`
 }
 
 type UpdateBusinessRequest struct {
@@ -51,47 +51,47 @@ type UpdateBusinessRequest struct {
 	Slug        *string `json:"slug"`
 	Vertical    *string `json:"vertical"`
 	Description *string `json:"description"`
-	ThemeColor  *string `json:"theme_color"`
+	ThemeColor  *string `json:"themeColor"`
 }
 
 // Service DTOs
 
 type ServiceResponse struct {
 	ID            string  `json:"id"`
-	BusinessID    string  `json:"business_id"`
+	BusinessID    string  `json:"businessId"`
 	Name          string  `json:"name"`
 	Description   string  `json:"description"`
-	DurationMin   int     `json:"duration_min"`
-	TotalPrice    float64 `json:"total_price"`
-	DepositAmount float64 `json:"deposit_amount"`
-	CreatedAt     string  `json:"created_at"`
-	UpdatedAt     string  `json:"updated_at"`
+	DurationMin   int     `json:"durationMin"`
+	TotalPrice    float64 `json:"totalPrice"`
+	DepositAmount float64 `json:"depositAmount"`
+	CreatedAt     string  `json:"createdAt"`
+	UpdatedAt     string  `json:"updatedAt"`
 }
 
 type CreateServiceRequest struct {
 	Name          string  `json:"name" binding:"required"`
 	Description   string  `json:"description"`
-	DurationMin   int     `json:"duration_min" binding:"required,min=1"`
-	TotalPrice    float64 `json:"total_price" binding:"required,gt=0"`
-	DepositAmount float64 `json:"deposit_amount" binding:"required,gte=0"`
+	DurationMin   int     `json:"durationMin" binding:"required,min=1"`
+	TotalPrice    float64 `json:"totalPrice" binding:"required,gt=0"`
+	DepositAmount float64 `json:"depositAmount" binding:"required,gte=0"`
 }
 
 // Slot DTOs
 
 type SlotResponse struct {
 	ID         string `json:"id"`
-	BusinessID string `json:"business_id"`
-	StartTime  string `json:"start_time"`
-	EndTime    string `json:"end_time"`
-	IsBooked   bool   `json:"is_booked"`
-	CreatedAt  string `json:"created_at"`
-	UpdatedAt  string `json:"updated_at"`
+	BusinessID string `json:"businessId"`
+	StartTime  string `json:"startTime"`
+	EndTime    string `json:"endTime"`
+	IsBooked   bool   `json:"isBooked"`
+	CreatedAt  string `json:"createdAt"`
+	UpdatedAt  string `json:"updatedAt"`
 }
 
 type CreateSlotRequest struct {
-	BusinessID string `json:"business_id" binding:"required,uuid"`
-	StartTime  string `json:"start_time" binding:"required"`
-	EndTime    string `json:"end_time" binding:"required,gtfield=StartTime"`
+	BusinessID string `json:"businessId" binding:"required,uuid"`
+	StartTime  string `json:"startTime" binding:"required"`
+	EndTime    string `json:"endTime" binding:"required,gtfield=StartTime"`
 }
 
 // Booking DTOs
@@ -104,23 +104,23 @@ type CustomerDetails struct {
 
 type BookingResponse struct {
 	ID          string          `json:"id"`
-	BusinessID  string          `json:"business_id"`
-	ServiceID   string          `json:"service_id"`
-	SlotID      string          `json:"slot_id"`
-	ServiceName string          `json:"service_name"`
-	SlotTime    string          `json:"slot_time"`
+	BusinessID  string          `json:"businessId"`
+	ServiceID   string          `json:"serviceId"`
+	SlotID      string          `json:"slotId"`
+	ServiceName string          `json:"serviceName"`
+	SlotTime    string          `json:"slotTime"`
 	Customer    CustomerDetails `json:"customer"`
 	Status      string          `json:"status"`
-	DepositPaid float64         `json:"deposit_paid"`
-	TotalPrice  float64         `json:"total_price"`
-	CreatedAt   string          `json:"created_at"`
-	UpdatedAt   string          `json:"updated_at"`
+	DepositPaid float64         `json:"depositPaid"`
+	TotalPrice  float64         `json:"totalPrice"`
+	CreatedAt   string          `json:"createdAt"`
+	UpdatedAt   string          `json:"updatedAt"`
 }
 
 type CreateBookingRequest struct {
-	BusinessID string          `json:"business_id" binding:"required,uuid"`
-	ServiceID  string          `json:"service_id" binding:"required,uuid"`
-	SlotID     string          `json:"slot_id" binding:"required,uuid"`
+	BusinessID string          `json:"businessId" binding:"required,uuid"`
+	ServiceID  string          `json:"serviceId" binding:"required,uuid"`
+	SlotID     string          `json:"slotId" binding:"required,uuid"`
 	Customer   CustomerDetails `json:"customer" binding:"required"`
 }
 
