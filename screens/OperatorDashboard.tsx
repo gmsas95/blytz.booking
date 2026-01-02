@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Calendar, LayoutDashboard, Settings, Plus, Trash2, Download, TrendingUp, DollarSign, Users, ChevronDown, Briefcase, Edit2, CreditCard, Bell, ShieldCheck, Loader2 } from 'lucide-react';
+import { LogOut, Calendar, LayoutDashboard, Settings, Plus, Trash2, Download, TrendingUp, DollarSign, Users, ChevronDown, Briefcase, Edit2, CreditCard, Bell, ShieldCheck, Loader2, Clock } from 'lucide-react';
 import { BookingStatus, Business, Service, Booking, Slot } from '../types';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -11,23 +11,29 @@ import { api } from '../api';
 export const OperatorDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'BOOKINGS' | 'SERVICES' | 'SETTINGS'>('DASHBOARD');
+  const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'BOOKINGS' | 'SERVICES' | 'SLOTS' | 'SETTINGS'>('DASHBOARD');
   const [currentBusiness, setCurrentBusiness] = useState<Business | null>(null);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [services, setServices] = useState<Service[]>([]);
+  const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [showSlotForm, setShowSlotForm] = useState(false);
   const [serviceForm, setServiceForm] = useState({
     name: '',
     description: '',
     durationMin: 60,
     totalPrice: 0,
     depositAmount: 0
+  });
+  const [slotForm, setSlotForm] = useState({
+    startTime: '',
+    endTime: ''
   });
 
   const [businessForm, setBusinessForm] = useState({
@@ -58,21 +64,23 @@ export const OperatorDashboard: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const businessesData = await api.getBusinesses();
       setBusinesses(businessesData);
-      
+
       if (businessesData.length > 0) {
         const selectedBusiness = currentBusiness || businessesData[0];
         setCurrentBusiness(selectedBusiness);
-        
-        const [bookingsData, servicesData] = await Promise.all([
+
+        const [bookingsData, servicesData, slotsData] = await Promise.all([
           api.getBookingsByBusiness(selectedBusiness.id),
-          api.getServicesByBusiness(selectedBusiness.id)
+          api.getServicesByBusiness(selectedBusiness.id),
+          api.getSlotsByBusiness(selectedBusiness.id)
         ]);
-        
+
         setBookings(bookingsData);
         setServices(servicesData);
+        setSlots(slotsData);
       }
     } catch (err) {
       console.error('Failed to fetch data:', err);
@@ -208,9 +216,50 @@ export const OperatorDashboard: React.FC = () => {
 
   const fmtDate = (iso: string) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
   const fmtMoney = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+  const fmtTime = (iso: string) => new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
+
+  const handleCreateSlot = async () => {
+    if (!currentBusiness) return;
+
+    try {
+      setSaving(true);
+      await api.createSlot(currentBusiness.id, slotForm);
+      setShowSlotForm(false);
+      setSlotForm({
+        startTime: '',
+        endTime: ''
+      });
+      await fetchData();
+      alert('Slot created successfully!');
+    } catch (err) {
+      console.error('Failed to create slot:', err);
+      alert('Failed to create slot. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteSlot = async (slotId: string) => {
+    if (!currentBusiness) return;
+
+    if (!confirm('Are you sure you want to delete this slot?')) return;
+
+    try {
+      setSaving(true);
+      await api.deleteSlot(currentBusiness.id, slotId);
+      await fetchData();
+      alert('Slot deleted successfully!');
+    } catch (err) {
+      console.error('Failed to delete slot:', err);
+      alert('Failed to delete slot. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const myBookings = bookings;
   const myServices = services;
+  const mySlots = slots;
   const totalRev = myBookings.reduce((acc, curr) => acc + curr.depositPaid, 0);
 
   const NavItem = ({ id, label, icon: Icon }: any) => (
@@ -336,6 +385,7 @@ export const OperatorDashboard: React.FC = () => {
           <NavItem id="DASHBOARD" label="Overview" icon={LayoutDashboard} />
           <NavItem id="BOOKINGS" label="Bookings" icon={Calendar} />
           <NavItem id="SERVICES" label="Services" icon={Briefcase} />
+          <NavItem id="SLOTS" label="Slots" icon={Clock} />
           <NavItem id="SETTINGS" label="Settings" icon={Settings} />
         </div>
 
@@ -355,21 +405,28 @@ export const OperatorDashboard: React.FC = () => {
                   {activeTab === 'DASHBOARD' && 'Dashboard Overview'}
                   {activeTab === 'BOOKINGS' && 'Bookings Management'}
                   {activeTab === 'SERVICES' && 'Service Packages'}
+                  {activeTab === 'SLOTS' && 'Availability Slots'}
                   {activeTab === 'SETTINGS' && 'Business Settings'}
               </h1>
               <p className="text-gray-500 mt-1">
                 {activeTab === 'DASHBOARD' && 'Welcome back, Operator.'}
                 {activeTab === 'BOOKINGS' && 'Track and manage your customer appointments.'}
                 {activeTab === 'SERVICES' && 'Configure what your customers can book.'}
+                {activeTab === 'SLOTS' && 'Manage available booking times.'}
                 {activeTab === 'SETTINGS' && 'Manage your profile and preferences.'}
               </p>
            </div>
-            {activeTab === 'BOOKINGS' && <Button>Export CSV</Button>}
-            {activeTab === 'SERVICES' && (
-              <Button className="gap-2" onClick={() => setShowServiceForm(true)}>
-                <Plus className="h-4 w-4" /> Add Service
-              </Button>
-            )}
+             {activeTab === 'BOOKINGS' && <Button>Export CSV</Button>}
+             {activeTab === 'SERVICES' && (
+               <Button className="gap-2" onClick={() => setShowServiceForm(true)}>
+                 <Plus className="h-4 w-4" /> Add Service
+               </Button>
+             )}
+             {activeTab === 'SLOTS' && (
+               <Button className="gap-2" onClick={() => setShowSlotForm(true)}>
+                 <Plus className="h-4 w-4" /> Add Slot
+               </Button>
+             )}
         </header>
 
         {activeTab === 'DASHBOARD' && (
@@ -601,11 +658,86 @@ export const OperatorDashboard: React.FC = () => {
                       </div>
                    </Card>
                 ))
+              )}
+           </div>
+         )}
+
+         {/* SLOTS TAB */}
+         {activeTab === 'SLOTS' && (
+           <div className="space-y-4">
+             {showSlotForm && (
+               <Card className="p-6 bg-blue-50 border-blue-200">
+                 <h3 className="text-lg font-bold text-gray-900 mb-4">Add New Slot</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                     <input
+                       type="datetime-local"
+                       value={slotForm.startTime}
+                       onChange={(e) => setSlotForm({...slotForm, startTime: e.target.value})}
+                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                     <input
+                       type="datetime-local"
+                       value={slotForm.endTime}
+                       onChange={(e) => setSlotForm({...slotForm, endTime: e.target.value})}
+                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                     />
+                   </div>
+                 </div>
+                 <div className="flex justify-end gap-3 mt-4">
+                   <Button
+                     variant="outline"
+                     onClick={() => {
+                       setShowSlotForm(false);
+                       setSlotForm({ startTime: '', endTime: '' });
+                     }}
+                   >
+                     Cancel
+                   </Button>
+                   <Button onClick={handleCreateSlot} disabled={saving}>
+                     {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                     Create Slot
+                   </Button>
+                 </div>
+               </Card>
              )}
-          </div>
-        )}
-        
-        {/* COMPLETED SETTINGS TAB */}
+
+             {mySlots.length === 0 ? (
+               <div className="text-center py-20 bg-white rounded-lg border border-dashed border-gray-300">
+                 <p className="text-gray-500">No slots configured.</p>
+                 <Button className="mt-4" variant="outline" onClick={() => setShowSlotForm(true)}>Create your first Slot</Button>
+               </div>
+             ) : (
+               mySlots.map((slot) => (
+                 <Card key={slot.id} className="flex items-center justify-between">
+                   <div className="flex-1">
+                     <div className="flex items-center gap-3">
+                       <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold ${slot.isBooked ? 'bg-gray-100 text-gray-500' : 'bg-green-100 text-green-700'}`}>
+                         <Clock className="h-4 w-4" />
+                       </div>
+                       <div>
+                         <p className="font-semibold text-gray-900">{fmtDate(slot.startTime)}</p>
+                         <p className="text-sm text-gray-500">{fmtTime(slot.startTime)} - {fmtTime(slot.endTime)}</p>
+                       </div>
+                     </div>
+                   </div>
+                   <div className="flex items-center gap-3 border-t border-gray-100 pt-4">
+                     <Button variant="ghost" className="p-2 text-gray-400 hover:text-red-600" onClick={() => handleDeleteSlot(slot.id)} disabled={saving}>
+                       {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                     </Button>
+                     {slot.isBooked && <span className="text-xs font-medium text-gray-500">Booked</span>}
+                   </div>
+                 </Card>
+               ))
+             )}
+           </div>
+         )}
+
+         {/* SETTINGS TAB */}
         {activeTab === 'SETTINGS' && (
             <div className="max-w-4xl space-y-6">
                 {/* General Profile */}

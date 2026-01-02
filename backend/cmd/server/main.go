@@ -126,6 +126,8 @@ func main() {
 
 		// Slots
 		v1.GET("/businesses/:businessId/slots", handler.GetSlotsByBusiness)
+		v1.POST("/businesses/:businessId/slots", handler.CreateSlot)
+		v1.DELETE("/businesses/:businessId/slots/:slotId", handler.DeleteSlot)
 
 		// Bookings
 		v1.POST("/bookings", handler.CreateBooking)

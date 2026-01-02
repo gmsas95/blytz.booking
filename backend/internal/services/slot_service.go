@@ -43,3 +43,17 @@ func (s *SlotService) GetByID(id uuid.UUID) (*models.Slot, error) {
 	}
 	return &slot, nil
 }
+
+func (s *SlotService) Create(slot *models.Slot) error {
+	if err := s.DB.Create(slot).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SlotService) Delete(id uuid.UUID) error {
+	if err := s.DB.Delete(&models.Slot{}, id).Error; err != nil {
+		return err
+	}
+	return nil
+}

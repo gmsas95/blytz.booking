@@ -102,6 +102,11 @@ type CreateSlotRequest struct {
 	EndTime    string `json:"endTime" binding:"required,gtfield=StartTime"`
 }
 
+type UpdateSlotRequest struct {
+	StartTime *string `json:"startTime"`
+	EndTime   *string `json:"endTime"`
+}
+
 // Booking DTOs
 
 type CustomerDetails struct {

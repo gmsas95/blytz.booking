@@ -215,6 +215,22 @@ class ApiClient {
     return this.request<Slot[]>(`/api/v1/businesses/${businessId}/slots`);
   }
 
+  async createSlot(businessId: string, data: {
+    startTime: string;
+    endTime: string;
+  }): Promise<Slot> {
+    return this.request<Slot>(`/api/v1/businesses/${businessId}/slots`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteSlot(businessId: string, slotId: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/v1/businesses/${businessId}/slots/${slotId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Bookings
   async createBooking(booking: Omit<Booking, 'id' | 'status' | 'createdAt' | 'updatedAt'>): Promise<Booking> {
     return this.request<Booking>('/api/v1/bookings', {

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"blytz.cloud/backend/internal/dto"
 	"blytz.cloud/backend/internal/models"
@@ -375,6 +376,100 @@ func (h *Handler) GetSlotsByBusiness(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+func (h *Handler) CreateSlot(c *gin.Context) {
+	businessIDStr := c.Param("businessId")
+	businessUUID, err := uuid.Parse(businessIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
+		return
+	}
+
+	var req dto.CreateSlotRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	startTime, err := time.Parse(time.RFC3339, req.StartTime)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid start time format"})
+		return
+	}
+
+	endTime, err := time.Parse(time.RFC3339, req.EndTime)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid end time format"})
+		return
+	}
+
+	if endTime.Before(startTime) {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "End time must be after start time"})
+		return
+	}
+
+	slot := &models.Slot{
+		ID:         uuid.New(),
+		BusinessID: businessUUID,
+		StartTime:  startTime,
+		EndTime:    endTime,
+		IsBooked:   false,
+	}
+
+	if err := h.SlotService.Create(slot); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to create slot"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, dto.SlotResponse{
+		ID:         slot.ID.String(),
+		BusinessID: slot.BusinessID.String(),
+		StartTime:  slot.StartTime.Format("2006-01-02T15:04:05Z07:00"),
+		EndTime:    slot.EndTime.Format("2006-01-02T15:04:05Z07:00"),
+		IsBooked:   slot.IsBooked,
+		CreatedAt:  slot.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:  slot.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	})
+}
+
+func (h *Handler) DeleteSlot(c *gin.Context) {
+	businessID := c.Param("businessId")
+	slotID := c.Param("slotId")
+
+	businessUUID, err := uuid.Parse(businessID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
+		return
+	}
+
+	slotUUID, err := uuid.Parse(slotID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid slot ID"})
+		return
+	}
+
+	slot, err := h.SlotService.GetByID(slotUUID)
+	if err != nil {
+		if err == services.ErrNotFound {
+			c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "Slot not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch slot"})
+		return
+	}
+
+	if slot.BusinessID != businessUUID {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "Slot does not belong to this business"})
+		return
+	}
+
+	if err := h.SlotService.Delete(slotUUID); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to delete slot"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Slot deleted successfully"})
 }
 
 // Booking Handlers
