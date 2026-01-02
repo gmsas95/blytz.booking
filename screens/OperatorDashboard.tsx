@@ -625,9 +625,85 @@ const mySlots = slots;
                     </div>
                  )}
               </div>
-           </div>
+            </div>
+         )}
+
+        {/* SLOTS MANAGEMENT TAB */}
+        {activeTab === 'SLOTS' && (
+          <div className="space-y-4">
+            {showSlotForm && (
+              <Card className="p-6 bg-blue-50 border-blue-200">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Add New Slot</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                    <input
+                      type="datetime-local"
+                      value={slotForm.startTime}
+                      onChange={(e) => setSlotForm({...slotForm, startTime: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                    <input
+                      type="datetime-local"
+                      value={slotForm.endTime}
+                      onChange={(e) => setSlotForm({...slotForm, endTime: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3 mt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowSlotForm(false);
+                      setSlotForm({ startTime: '', endTime: '' });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleCreateSlot} disabled={saving}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Create Slot
+                  </Button>
+                </div>
+              </Card>
+            )}
+
+            {mySlots.length === 0 ? (
+              <div className="text-center py-20 bg-white rounded-lg border border-dashed border-gray-300">
+                <p className="text-gray-500">No slots configured.</p>
+                <Button className="mt-4" variant="outline" onClick={() => setShowSlotForm(true)}>Create your first Slot</Button>
+              </div>
+            ) : (
+              mySlots.map((slot) => (
+                <Card key={slot.id} className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold ${slot.isBooked ? 'bg-gray-100 text-gray-500' : 'bg-green-100 text-green-700'}`}>
+                        <Clock className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{fmtDate(slot.startTime)}</p>
+                        <p className="text-sm text-gray-500">{fmtTime(slot.startTime)} - {fmtTime(slot.endTime)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 border-t border-gray-100 pt-4">
+                    <Button variant="ghost" className="p-2 text-gray-400 hover:text-red-600" onClick={() => handleDeleteSlot(slot.id)} disabled={saving}>
+                      {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    </Button>
+                    {slot.isBooked && <span className="text-xs font-medium text-gray-500">Booked</span>}
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
         )}
 
+        {/* BOOKINGS TAB */}
         {activeTab === 'BOOKINGS' && (
           <div className="space-y-4">
             {myBookings.length === 0 ? (
