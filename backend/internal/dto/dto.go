@@ -76,6 +76,14 @@ type CreateServiceRequest struct {
 	DepositAmount float64 `json:"depositAmount" binding:"required,gte=0"`
 }
 
+type UpdateServiceRequest struct {
+	Name          *string  `json:"name"`
+	Description   *string  `json:"description"`
+	DurationMin   *int     `json:"durationMin"`
+	TotalPrice    *float64 `json:"totalPrice"`
+	DepositAmount *float64 `json:"depositAmount"`
+}
+
 // Slot DTOs
 
 type SlotResponse struct {

@@ -121,6 +121,7 @@ func main() {
 		// Services
 		v1.GET("/businesses/:businessId/services", handler.GetServicesByBusiness)
 		v1.POST("/businesses/:businessId/services", handler.CreateService)
+		v1.PUT("/businesses/:businessId/services/:serviceId", handler.UpdateService)
 		v1.DELETE("/businesses/:businessId/services/:serviceId", handler.DeleteService)
 
 		// Slots

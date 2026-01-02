@@ -244,6 +244,68 @@ func (h *Handler) CreateService(c *gin.Context) {
 	})
 }
 
+func (h *Handler) UpdateService(c *gin.Context) {
+	businessIDStr := c.Param("businessId")
+	serviceID := c.Param("serviceId")
+
+	businessUUID, err := uuid.Parse(businessIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
+		return
+	}
+
+	serviceUUID, err := uuid.Parse(serviceID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid service ID"})
+		return
+	}
+
+	var req dto.UpdateServiceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	service, err := h.ServiceService.GetByID(serviceUUID)
+	if err != nil {
+		if err == services.ErrNotFound {
+			c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "Service not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch service"})
+		return
+	}
+
+	if service.BusinessID != businessUUID {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "Service does not belong to this business"})
+		return
+	}
+
+	updates := &models.Service{}
+	if req.Name != nil {
+		updates.Name = *req.Name
+	}
+	if req.Description != nil {
+		updates.Description = *req.Description
+	}
+	if req.DurationMin != nil {
+		updates.DurationMin = *req.DurationMin
+	}
+	if req.TotalPrice != nil {
+		updates.TotalPrice = *req.TotalPrice
+	}
+	if req.DepositAmount != nil {
+		updates.DepositAmount = *req.DepositAmount
+	}
+
+	if err := h.ServiceService.Update(serviceUUID, updates); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to update service"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Service updated successfully"})
+}
+
 func (h *Handler) DeleteService(c *gin.Context) {
 	businessID := c.Param("businessId")
 	serviceID := c.Param("serviceId")

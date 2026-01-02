@@ -25,9 +25,9 @@ export const OperatorDashboard: React.FC = () => {
   const [serviceForm, setServiceForm] = useState({
     name: '',
     description: '',
-    duration_min: 60,
-    total_price: 0,
-    deposit_amount: 0
+    durationMin: 60,
+    totalPrice: 0,
+    depositAmount: 0
   });
 
   const [businessForm, setBusinessForm] = useState({
@@ -129,7 +129,7 @@ export const OperatorDashboard: React.FC = () => {
 
   const handleCreateService = async () => {
     if (!currentBusiness) return;
-    
+
     try {
       setSaving(true);
       await api.createService(currentBusiness.id, serviceForm);
@@ -137,9 +137,9 @@ export const OperatorDashboard: React.FC = () => {
       setServiceForm({
         name: '',
         description: '',
-        duration_min: 60,
-        total_price: 0,
-        deposit_amount: 0
+        durationMin: 60,
+        totalPrice: 0,
+        depositAmount: 0
       });
       await fetchData();
       alert('Service created successfully!');
@@ -170,7 +170,40 @@ export const OperatorDashboard: React.FC = () => {
   };
 
   const handleEditService = (service: Service) => {
-    alert('Edit service functionality is not yet implemented');
+    setEditingService(service);
+    setServiceForm({
+      name: service.name,
+      description: service.description,
+      durationMin: service.durationMin,
+      totalPrice: service.totalPrice,
+      depositAmount: service.depositAmount
+    });
+    setShowServiceForm(true);
+  };
+
+  const handleUpdateService = async () => {
+    if (!currentBusiness || !editingService) return;
+
+    try {
+      setSaving(true);
+      await api.updateService(currentBusiness.id, editingService.id, serviceForm);
+      setShowServiceForm(false);
+      setEditingService(null);
+      setServiceForm({
+        name: '',
+        description: '',
+        durationMin: 60,
+        totalPrice: 0,
+        depositAmount: 0
+      });
+      await fetchData();
+      alert('Service updated successfully!');
+    } catch (err) {
+      console.error('Failed to update service:', err);
+      alert('Failed to update service. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const fmtDate = (iso: string) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
@@ -452,8 +485,8 @@ export const OperatorDashboard: React.FC = () => {
         {activeTab === 'SERVICES' && (
           <div className="space-y-4">
              {showServiceForm && (
-               <Card className="p-6 bg-blue-50 border-blue-200">
-                 <h3 className="text-lg font-bold text-gray-900 mb-4">Add New Service</h3>
+                <Card className="p-6 bg-blue-50 border-blue-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">{editingService ? 'Edit Service' : 'Add New Service'}</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    <div className="col-span-1 md:col-span-2">
                      <label className="block text-sm font-medium text-gray-700 mb-1">Service Name</label>
@@ -475,57 +508,58 @@ export const OperatorDashboard: React.FC = () => {
                        placeholder="Describe your service..."
                      />
                    </div>
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
-                     <input
-                       type="number"
-                       value={serviceForm.duration_min}
-                       onChange={(e) => setServiceForm({...serviceForm, duration_min: parseInt(e.target.value)})}
-                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                       min="1"
-                     />
-                   </div>
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">Total Price ($)</label>
-                     <input
-                       type="number"
-                       value={serviceForm.total_price}
-                       onChange={(e) => setServiceForm({...serviceForm, total_price: parseFloat(e.target.value)})}
-                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                       min="0"
-                       step="0.01"
-                     />
-                   </div>
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">Deposit Amount ($)</label>
-                     <input
-                       type="number"
-                       value={serviceForm.deposit_amount}
-                       onChange={(e) => setServiceForm({...serviceForm, deposit_amount: parseFloat(e.target.value)})}
-                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                       min="0"
-                       step="0.01"
-                     />
-                   </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
+                      <input
+                        type="number"
+                        value={serviceForm.durationMin}
+                        onChange={(e) => setServiceForm({...serviceForm, durationMin: parseInt(e.target.value)})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        min="1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Total Price ($)</label>
+                      <input
+                        type="number"
+                        value={serviceForm.totalPrice}
+                        onChange={(e) => setServiceForm({...serviceForm, totalPrice: parseFloat(e.target.value)})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Deposit Amount ($)</label>
+                      <input
+                        type="number"
+                        value={serviceForm.depositAmount}
+                        onChange={(e) => setServiceForm({...serviceForm, depositAmount: parseFloat(e.target.value)})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
                  </div>
-                 <div className="flex justify-end gap-3 mt-4">
-                   <Button variant="outline" onClick={() => {
-                     setShowServiceForm(false);
-                     setServiceForm({
-                       name: '',
-                       description: '',
-                       duration_min: 60,
-                       total_price: 0,
-                       deposit_amount: 0
-                     });
-                   }}>
-                     Cancel
-                   </Button>
-                   <Button onClick={handleCreateService} disabled={saving}>
-                     {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                     Create Service
-                   </Button>
-                 </div>
+                  <div className="flex justify-end gap-3 mt-4">
+                    <Button variant="outline" onClick={() => {
+                      setShowServiceForm(false);
+                      setEditingService(null);
+                      setServiceForm({
+                        name: '',
+                        description: '',
+                        durationMin: 60,
+                        totalPrice: 0,
+                        depositAmount: 0
+                      });
+                    }}>
+                      Cancel
+                    </Button>
+                    <Button onClick={editingService ? handleUpdateService : handleCreateService} disabled={saving}>
+                      {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      {editingService ? 'Update Service' : 'Create Service'}
+                    </Button>
+                  </div>
                </Card>
              )}
 

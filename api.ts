@@ -11,20 +11,20 @@ export interface Business {
 
 export interface Service {
   id: string;
-  business_id: string;
+  businessId: string;
   name: string;
   description: string;
-  duration_min: number;
-  total_price: number;
-  deposit_amount: number;
+  durationMin: number;
+  totalPrice: number;
+  depositAmount: number;
 }
 
 export interface Slot {
   id: string;
-  business_id: string;
-  start_time: string;
-  end_time: string;
-  is_booked: boolean;
+  businessId: string;
+  startTime: string;
+  endTime: string;
+  isBooked: boolean;
 }
 
 export interface CustomerDetails {
@@ -35,15 +35,15 @@ export interface CustomerDetails {
 
 export interface Booking {
   id: string;
-  business_id: string;
-  service_id: string;
-  slot_id: string;
-  service_name: string;
-  slot_time: string;
+  businessId: string;
+  serviceId: string;
+  slotId: string;
+  serviceName: string;
+  slotTime: string;
   customer: CustomerDetails;
   status: string;
-  deposit_paid: number;
-  total_price: number;
+  depositPaid: number;
+  totalPrice: number;
 }
 
 export interface User {
@@ -187,6 +187,19 @@ class ApiClient {
   }): Promise<Service> {
     return this.request<Service>(`/api/v1/businesses/${businessId}/services`, {
       method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateService(businessId: string, serviceId: string, data: {
+    name?: string;
+    description?: string;
+    durationMin?: number;
+    totalPrice?: number;
+    depositAmount?: number;
+  }): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/v1/businesses/${businessId}/services/${serviceId}`, {
+      method: 'PUT',
       body: JSON.stringify(data),
     });
   }
