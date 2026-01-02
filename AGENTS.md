@@ -35,12 +35,12 @@ Blytz.Cloud is a **booking management prototype** for freelancers and service bu
 - **Slot management** (create, delete, list slots from frontend)
 
 ### ❌ Critical Missing Features
-- **Security**: No rate limiting, CORS is permissive, no input sanitization
+- **Security**: No rate limiting, no input sanitization
 - **Business Logic**: No payment processing, notifications, or conflict resolution
 - **Booking Management**: No reschedule functionality (cancel works)
 - **Password Reset**: No forgot password functionality
 - **Slot Management**: No bulk creation or recurring slots
-- **Error Handling**: Basic error messages, no error boundaries
+- **Error Handling**: Basic error messages (error boundaries now added)
 
 ## Development Commands
 
