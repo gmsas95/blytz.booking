@@ -114,10 +114,14 @@ func main() {
 
 		// Businesses
 		v1.GET("/businesses", handler.ListBusinesses)
+		v1.POST("/businesses", handler.CreateBusiness)
 		v1.GET("/businesses/:businessId", handler.GetBusiness)
+		v1.PUT("/businesses/:businessId", handler.UpdateBusiness)
 
 		// Services
 		v1.GET("/businesses/:businessId/services", handler.GetServicesByBusiness)
+		v1.POST("/businesses/:businessId/services", handler.CreateService)
+		v1.DELETE("/businesses/:businessId/services/:serviceId", handler.DeleteService)
 
 		// Slots
 		v1.GET("/businesses/:businessId/slots", handler.GetSlotsByBusiness)

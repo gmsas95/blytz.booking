@@ -147,9 +147,53 @@ class ApiClient {
     return this.request<Business>(`/api/v1/businesses/${id}`);
   }
 
+  async createBusiness(data: {
+    name: string;
+    slug: string;
+    vertical: string;
+    description?: string;
+    theme_color?: string;
+  }): Promise<Business> {
+    return this.request<Business>('/api/v1/businesses', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateBusiness(id: string, data: {
+    name?: string;
+    vertical?: string;
+    description?: string;
+    theme_color?: string;
+  }): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/v1/businesses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Services
   async getServicesByBusiness(businessId: string): Promise<Service[]> {
     return this.request<Service[]>(`/api/v1/businesses/${businessId}/services`);
+  }
+
+  async createService(businessId: string, data: {
+    name: string;
+    description?: string;
+    duration_min: number;
+    total_price: number;
+    deposit_amount: number;
+  }): Promise<Service> {
+    return this.request<Service>(`/api/v1/businesses/${businessId}/services`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteService(businessId: string, serviceId: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/v1/businesses/${businessId}/services/${serviceId}`, {
+      method: 'DELETE',
+    });
   }
 
   // Slots

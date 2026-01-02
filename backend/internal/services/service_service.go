@@ -35,3 +35,32 @@ func (s *ServiceService) GetByID(id uuid.UUID) (*models.Service, error) {
 	}
 	return &service, nil
 }
+
+func (s *ServiceService) Create(service *models.Service) error {
+	if err := s.DB.Create(service).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ServiceService) Update(id uuid.UUID, service *models.Service) error {
+	result := s.DB.Model(&models.Service{}).Where("id = ?", id).Updates(service)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (s *ServiceService) Delete(id uuid.UUID) error {
+	result := s.DB.Delete(&models.Service{}, id)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}

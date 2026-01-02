@@ -93,6 +93,79 @@ func (h *Handler) GetBusiness(c *gin.Context) {
 	})
 }
 
+func (h *Handler) CreateBusiness(c *gin.Context) {
+	var req dto.CreateBusinessRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	business := &models.Business{
+		ID:          uuid.New(),
+		Name:        req.Name,
+		Slug:        req.Slug,
+		Vertical:    req.Vertical,
+		Description: req.Description,
+		ThemeColor:  req.ThemeColor,
+	}
+
+	if err := h.BusinessService.Create(business); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to create business"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, dto.BusinessResponse{
+		ID:          business.ID.String(),
+		Name:        business.Name,
+		Slug:        business.Slug,
+		Vertical:    business.Vertical,
+		Description: business.Description,
+		ThemeColor:  business.ThemeColor,
+		CreatedAt:   business.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:   business.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	})
+}
+
+func (h *Handler) UpdateBusiness(c *gin.Context) {
+	id := c.Param("businessId")
+	businessID, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
+		return
+	}
+
+	var req dto.UpdateBusinessRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	updates := &models.Business{}
+	if req.Name != nil {
+		updates.Name = *req.Name
+	}
+	if req.Vertical != nil {
+		updates.Vertical = *req.Vertical
+	}
+	if req.Description != nil {
+		updates.Description = *req.Description
+	}
+	if req.ThemeColor != nil {
+		updates.ThemeColor = *req.ThemeColor
+	}
+
+	if err := h.BusinessService.Update(businessID, updates); err != nil {
+		if err == services.ErrNotFound {
+			c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "Business not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to update business"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Business updated successfully"})
+}
+
 // Service Handlers
 func (h *Handler) GetServicesByBusiness(c *gin.Context) {
 	businessID := c.Param("businessId")
@@ -124,6 +197,87 @@ func (h *Handler) GetServicesByBusiness(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+func (h *Handler) CreateService(c *gin.Context) {
+	var req dto.CreateServiceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	businessID, err := uuid.Parse(req.BusinessID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
+		return
+	}
+
+	service := &models.Service{
+		ID:            uuid.New(),
+		BusinessID:    businessID,
+		Name:          req.Name,
+		Description:   req.Description,
+		DurationMin:   req.DurationMin,
+		TotalPrice:    req.TotalPrice,
+		DepositAmount: req.DepositAmount,
+	}
+
+	if err := h.ServiceService.Create(service); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to create service"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, dto.ServiceResponse{
+		ID:            service.ID.String(),
+		BusinessID:    service.BusinessID.String(),
+		Name:          service.Name,
+		Description:   service.Description,
+		DurationMin:   service.DurationMin,
+		TotalPrice:    service.TotalPrice,
+		DepositAmount: service.DepositAmount,
+		CreatedAt:     service.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:     service.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	})
+}
+
+func (h *Handler) DeleteService(c *gin.Context) {
+	businessID := c.Param("businessId")
+	serviceID := c.Param("serviceId")
+
+	businessUUID, err := uuid.Parse(businessID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
+		return
+	}
+
+	serviceUUID, err := uuid.Parse(serviceID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid service ID"})
+		return
+	}
+
+	// Verify service belongs to business
+	service, err := h.ServiceService.GetByID(serviceUUID)
+	if err != nil {
+		if err == services.ErrNotFound {
+			c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "Service not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch service"})
+		return
+	}
+
+	if service.BusinessID != businessUUID {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "Service does not belong to this business"})
+		return
+	}
+
+	if err := h.ServiceService.Delete(serviceUUID); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to delete service"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Service deleted successfully"})
 }
 
 // Slot Handlers

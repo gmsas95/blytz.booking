@@ -18,9 +18,37 @@ export const OperatorDashboard: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  
+  const [showServiceForm, setShowServiceForm] = useState(false);
+  const [serviceForm, setServiceForm] = useState({
+    name: '',
+    description: '',
+    duration_min: 60,
+    total_price: 0,
+    deposit_amount: 0
+  });
+
+  const [businessForm, setBusinessForm] = useState({
+    name: '',
+    vertical: '',
+    description: '',
+    theme_color: 'blue'
+  });
 
   useEffect(() => {
     fetchData();
+  }, [currentBusiness]);
+
+  useEffect(() => {
+    if (currentBusiness) {
+      setBusinessForm({
+        name: currentBusiness.name,
+        vertical: currentBusiness.vertical,
+        description: currentBusiness.description,
+        theme_color: currentBusiness.themeColor
+      });
+    }
   }, [currentBusiness]);
 
   const fetchData = async () => {
@@ -53,6 +81,90 @@ export const OperatorDashboard: React.FC = () => {
 
   const handleBusinessChange = async (business: Business) => {
     setCurrentBusiness(business);
+  };
+
+  const handleSaveBusiness = async () => {
+    if (!currentBusiness) return;
+    
+    try {
+      setSaving(true);
+      await api.updateBusiness(currentBusiness.id, businessForm);
+      await fetchData();
+      alert('Business updated successfully!');
+    } catch (err) {
+      console.error('Failed to update business:', err);
+      alert('Failed to update business. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCreateBusiness = async () => {
+    if (!businessForm.name || !businessForm.slug) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const slug = businessForm.name.toLowerCase().replace(/\s+/g, '-');
+      await api.createBusiness({
+        name: businessForm.name,
+        slug: slug,
+        vertical: businessForm.vertical || 'General',
+        description: businessForm.description,
+        theme_color: businessForm.theme_color
+      });
+      await fetchData();
+      alert('Business created successfully!');
+    } catch (err) {
+      console.error('Failed to create business:', err);
+      alert('Failed to create business. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCreateService = async () => {
+    if (!currentBusiness) return;
+    
+    try {
+      setSaving(true);
+      await api.createService(currentBusiness.id, serviceForm);
+      setShowServiceForm(false);
+      setServiceForm({
+        name: '',
+        description: '',
+        duration_min: 60,
+        total_price: 0,
+        deposit_amount: 0
+      });
+      await fetchData();
+      alert('Service created successfully!');
+    } catch (err) {
+      console.error('Failed to create service:', err);
+      alert('Failed to create service. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteService = async (serviceId: string) => {
+    if (!currentBusiness) return;
+    
+    if (!confirm('Are you sure you want to delete this service?')) return;
+
+    try {
+      setSaving(true);
+      await api.deleteService(currentBusiness.id, serviceId);
+      await fetchData();
+      alert('Service deleted successfully!');
+    } catch (err) {
+      console.error('Failed to delete service:', err);
+      alert('Failed to delete service. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const fmtDate = (iso: string) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
@@ -101,10 +213,53 @@ export const OperatorDashboard: React.FC = () => {
   if (businesses.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md">
+        <div className="text-center max-w-md w-full mx-4">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">No Businesses Found</h2>
           <p className="text-gray-500 mb-6">You don't have any businesses set up yet. Create one to get started.</p>
-          <Button>Create Your First Business</Button>
+          <Card className="p-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Business Name</label>
+                <input
+                  type="text"
+                  value={businessForm.name}
+                  onChange={(e) => setBusinessForm({...businessForm, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., My Business"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Vertical</label>
+                <select
+                  value={businessForm.vertical}
+                  onChange={(e) => setBusinessForm({...businessForm, vertical: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select vertical...</option>
+                  <option value="Automotive">Automotive</option>
+                  <option value="Wellness">Wellness</option>
+                  <option value="Professional">Professional Services</option>
+                  <option value="Creative">Creative</option>
+                  <option value="Education">Education</option>
+                  <option value="General">General</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={businessForm.description}
+                  onChange={(e) => setBusinessForm({...businessForm, description: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                  placeholder="Describe your business..."
+                />
+              </div>
+              <Button onClick={handleCreateBusiness} disabled={saving} className="w-full">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Create Your First Business
+              </Button>
+            </div>
+          </Card>
         </div>
       </div>
     );
@@ -170,8 +325,12 @@ export const OperatorDashboard: React.FC = () => {
                 {activeTab === 'SETTINGS' && 'Manage your profile and preferences.'}
               </p>
            </div>
-           {activeTab === 'BOOKINGS' && <Button>Export CSV</Button>}
-           {activeTab === 'SERVICES' && <Button className="gap-2"><Plus className="h-4 w-4" /> Add Service</Button>}
+            {activeTab === 'BOOKINGS' && <Button>Export CSV</Button>}
+            {activeTab === 'SERVICES' && (
+              <Button className="gap-2" onClick={() => setShowServiceForm(true)}>
+                <Plus className="h-4 w-4" /> Add Service
+              </Button>
+            )}
         </header>
 
         {activeTab === 'DASHBOARD' && (
@@ -284,38 +443,119 @@ export const OperatorDashboard: React.FC = () => {
 
         {/* SERVICES MANAGEMENT TAB */}
         {activeTab === 'SERVICES' && (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-4">
+             {showServiceForm && (
+               <Card className="p-6 bg-blue-50 border-blue-200">
+                 <h3 className="text-lg font-bold text-gray-900 mb-4">Add New Service</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="col-span-1 md:col-span-2">
+                     <label className="block text-sm font-medium text-gray-700 mb-1">Service Name</label>
+                     <input
+                       type="text"
+                       value={serviceForm.name}
+                       onChange={(e) => setServiceForm({...serviceForm, name: e.target.value})}
+                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                       placeholder="e.g., Haircut, Massage"
+                     />
+                   </div>
+                   <div className="col-span-1 md:col-span-2">
+                     <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                     <textarea
+                       value={serviceForm.description}
+                       onChange={(e) => setServiceForm({...serviceForm, description: e.target.value})}
+                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                       rows={3}
+                       placeholder="Describe your service..."
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
+                     <input
+                       type="number"
+                       value={serviceForm.duration_min}
+                       onChange={(e) => setServiceForm({...serviceForm, duration_min: parseInt(e.target.value)})}
+                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                       min="1"
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">Total Price ($)</label>
+                     <input
+                       type="number"
+                       value={serviceForm.total_price}
+                       onChange={(e) => setServiceForm({...serviceForm, total_price: parseFloat(e.target.value)})}
+                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                       min="0"
+                       step="0.01"
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">Deposit Amount ($)</label>
+                     <input
+                       type="number"
+                       value={serviceForm.deposit_amount}
+                       onChange={(e) => setServiceForm({...serviceForm, deposit_amount: parseFloat(e.target.value)})}
+                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                       min="0"
+                       step="0.01"
+                     />
+                   </div>
+                 </div>
+                 <div className="flex justify-end gap-3 mt-4">
+                   <Button variant="outline" onClick={() => {
+                     setShowServiceForm(false);
+                     setServiceForm({
+                       name: '',
+                       description: '',
+                       duration_min: 60,
+                       total_price: 0,
+                       deposit_amount: 0
+                     });
+                   }}>
+                     Cancel
+                   </Button>
+                   <Button onClick={handleCreateService} disabled={saving}>
+                     {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                     Create Service
+                   </Button>
+                 </div>
+               </Card>
+             )}
+
              {myServices.length === 0 ? (
                <div className="text-center py-20 bg-white rounded-lg border border-dashed border-gray-300">
-                  <p className="text-gray-500">No services configured.</p>
-                  <Button className="mt-4" variant="outline">Create your first Service</Button>
+                   <p className="text-gray-500">No services configured.</p>
+                   <Button className="mt-4" variant="outline" onClick={() => setShowServiceForm(true)}>Create your first Service</Button>
                </div>
              ) : (
-                myServices.map((service) => (
-                   <Card key={service.id} className="group flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:shadow-md transition-shadow">
-                      <div className="flex-1">
-                         <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg font-bold text-gray-900">{service.name}</h3>
-                            <div className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-500 font-medium">
-                               {service.durationMin} min
-                            </div>
-                         </div>
-                         <p className="text-sm text-gray-500 max-w-xl">{service.description}</p>
-                      </div>
+                 myServices.map((service) => (
+                    <Card key={service.id} className="group flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:shadow-md transition-shadow">
+                       <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                             <h3 className="text-lg font-bold text-gray-900">{service.name}</h3>
+                             <div className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-500 font-medium">
+                                {service.durationMin} min
+                             </div>
+                          </div>
+                          <p className="text-sm text-gray-500 max-w-xl">{service.description}</p>
+                       </div>
 
-                      <div className="flex items-center gap-6 border-t sm:border-t-0 sm:border-l border-gray-100 pt-4 sm:pt-0 sm:pl-6">
-                         <div className="text-right min-w-[100px]">
-                            <p className="text-sm text-gray-500">Total Price</p>
-                            <p className="font-semibold text-gray-900">{fmtMoney(service.totalPrice)}</p>
-                         </div>
-                         <div className="text-right min-w-[100px]">
-                            <p className="text-sm text-gray-500">Required Deposit</p>
-                            <p className="font-bold text-primary-600">{fmtMoney(service.depositAmount)}</p>
-                         </div>
-                         <div className="flex items-center gap-1">
-                            <Button variant="ghost" className="p-2 text-gray-400 hover:text-blue-600">
-                               <Edit2 className="h-4 w-4" />
-                            </Button>
+                       <div className="flex items-center gap-6 border-t sm:border-t-0 sm:border-l border-gray-100 pt-4 sm:pt-0 sm:pl-6">
+                          <div className="text-right min-w-[100px]">
+                             <p className="text-sm text-gray-500">Total Price</p>
+                             <p className="font-semibold text-gray-900">{fmtMoney(service.totalPrice)}</p>
+                          </div>
+                          <div className="text-right min-w-[100px]">
+                             <p className="text-sm text-gray-500">Required Deposit</p>
+                             <p className="font-bold text-primary-600">{fmtMoney(service.depositAmount)}</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                             <Button variant="ghost" className="p-2 text-gray-400 hover:text-blue-600">
+                                <Edit2 className="h-4 w-4" />
+                             </Button>
+                             <Button variant="ghost" className="p-2 text-gray-400 hover:text-red-600" onClick={() => handleDeleteService(service.id)} disabled={saving}>
+                                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                             </Button>
                             <Button variant="ghost" className="p-2 text-gray-400 hover:text-red-600">
                                <Trash2 className="h-4 w-4" />
                             </Button>
@@ -333,30 +573,79 @@ export const OperatorDashboard: React.FC = () => {
                 {/* General Profile */}
                 <Card className="p-6">
                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <Briefcase className="h-5 w-5 text-gray-400" /> 
+                      <Briefcase className="h-5 w-5 text-gray-400" />
                       Business Profile
                    </h3>
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Input label="Business Name" defaultValue={currentBusiness.name} />
-                      <Input label="URL Slug" defaultValue={currentBusiness.slug} />
-                      <div className="col-span-1 md:col-span-2">
-                         <Input label="Description" defaultValue={currentBusiness.description} />
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Business Name</label>
+                        <input
+                          type="text"
+                          value={businessForm.name}
+                          onChange={(e) => setBusinessForm({...businessForm, name: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        />
                       </div>
-                      <Input label="Vertical" defaultValue={currentBusiness.vertical} disabled className="bg-gray-50 text-gray-500" />
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">URL Slug</label>
+                        <input
+                          type="text"
+                          value={currentBusiness?.slug || ''}
+                          disabled
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
+                        />
+                      </div>
+                      <div className="col-span-1 md:col-span-2">
+                         <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                         <textarea
+                           value={businessForm.description}
+                           onChange={(e) => setBusinessForm({...businessForm, description: e.target.value})}
+                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                           rows={3}
+                         />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Vertical</label>
+                        <select
+                          value={businessForm.vertical}
+                          onChange={(e) => setBusinessForm({...businessForm, vertical: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">Select vertical...</option>
+                          <option value="Automotive">Automotive</option>
+                          <option value="Wellness">Wellness</option>
+                          <option value="Professional">Professional Services</option>
+                          <option value="Creative">Creative</option>
+                          <option value="Education">Education</option>
+                          <option value="General">General</option>
+                        </select>
+                      </div>
                    </div>
                 </Card>
 
                 {/* Branding */}
                 <Card className="p-6">
                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <Settings className="h-5 w-5 text-gray-400" /> 
+                      <Settings className="h-5 w-5 text-gray-400" />
                       Branding & Theme
                    </h3>
                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-blue-500 ring-2 ring-offset-2 ring-blue-500 cursor-pointer"></div>
-                      <div className="w-12 h-12 rounded-full bg-emerald-500 cursor-pointer opacity-50 hover:opacity-100"></div>
-                      <div className="w-12 h-12 rounded-full bg-zinc-800 cursor-pointer opacity-50 hover:opacity-100"></div>
-                      <div className="w-12 h-12 rounded-full bg-primary-500 cursor-pointer opacity-50 hover:opacity-100"></div>
+                      <div
+                        className={`w-12 h-12 rounded-full cursor-pointer ring-2 ring-offset-2 ${businessForm.theme_color === 'blue' ? 'ring-blue-500' : 'opacity-50 hover:opacity-100'} bg-blue-500`}
+                        onClick={() => setBusinessForm({...businessForm, theme_color: 'blue'})}
+                      ></div>
+                      <div
+                        className={`w-12 h-12 rounded-full cursor-pointer ring-2 ring-offset-2 ${businessForm.theme_color === 'emerald' ? 'ring-emerald-500' : 'opacity-50 hover:opacity-100'} bg-emerald-500`}
+                        onClick={() => setBusinessForm({...businessForm, theme_color: 'emerald'})}
+                      ></div>
+                      <div
+                        className={`w-12 h-12 rounded-full cursor-pointer ring-2 ring-offset-2 ${businessForm.theme_color === 'zinc' ? 'ring-zinc-800' : 'opacity-50 hover:opacity-100'} bg-zinc-800`}
+                        onClick={() => setBusinessForm({...businessForm, theme_color: 'zinc'})}
+                      ></div>
+                      <div
+                        className={`w-12 h-12 rounded-full cursor-pointer ring-2 ring-offset-2 ${businessForm.theme_color === 'purple' ? 'ring-purple-500' : 'opacity-50 hover:opacity-100'} bg-purple-500`}
+                        onClick={() => setBusinessForm({...businessForm, theme_color: 'purple'})}
+                      ></div>
                    </div>
                    <p className="text-sm text-gray-500 mt-4">Selected color will be applied to your public booking page, buttons, and customer emails.</p>
                 </Card>
@@ -364,7 +653,7 @@ export const OperatorDashboard: React.FC = () => {
                 {/* Banking / Stripe */}
                 <Card className="p-6">
                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <CreditCard className="h-5 w-5 text-gray-400" /> 
+                      <CreditCard className="h-5 w-5 text-gray-400" />
                       Payment Connection
                    </h3>
                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center justify-between">
@@ -383,8 +672,25 @@ export const OperatorDashboard: React.FC = () => {
 
                 {/* Action Bar */}
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                    <Button variant="ghost">Discard Changes</Button>
-                    <Button>Save Configuration</Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        if (currentBusiness) {
+                          setBusinessForm({
+                            name: currentBusiness.name,
+                            vertical: currentBusiness.vertical,
+                            description: currentBusiness.description,
+                            theme_color: currentBusiness.themeColor
+                          });
+                        }
+                      }}
+                    >
+                      Discard Changes
+                    </Button>
+                    <Button onClick={handleSaveBusiness} disabled={saving}>
+                      {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      Save Configuration
+                    </Button>
                 </div>
             </div>
         )}
