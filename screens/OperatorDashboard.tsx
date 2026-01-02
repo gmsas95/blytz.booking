@@ -761,9 +761,22 @@ export const OperatorDashboard: React.FC = () => {
                ))
              )}
            </div>
-         )}
+          )}
 
-         {/* SETTINGS TAB */}
+          {/* AVAILABILITY TAB */}
+          {activeTab === 'AVAILABILITY' && (
+            <div className="max-w-4xl space-y-6">
+              <Card className="p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Weekly Availability</h3>
+                <p className="text-sm text-gray-500 mb-4">Set working hours for each day of the week. Closed days will not have any available slots.</p>
+                <Button onClick={() => window.location.href = '/availability'} className="w-full">
+                  Open Availability Settings
+                </Button>
+              </Card>
+            </div>
+          )}
+
+          {/* SETTINGS TAB */}
         {activeTab === 'SETTINGS' && (
             <div className="max-w-4xl space-y-6">
                 {/* General Profile */}
