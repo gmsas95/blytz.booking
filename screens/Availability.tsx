@@ -51,8 +51,8 @@ export const Availability: React.FC = () => {
         const availabilityData = await api.getAvailability(selectedBusiness.id);
 
         setAvailability(availabilityData);
-        setDurationMin(selectedBusiness.slotDurationMin);
-        setMaxBookings(selectedBusiness.maxBookings);
+        setDurationMin((selectedBusiness as any).slotDurationMin || 30);
+        setMaxBookings((selectedBusiness as any).maxBookings || 1);
       }
     } catch (err) {
       console.error('Failed to fetch data:', err);
@@ -103,7 +103,7 @@ export const Availability: React.FC = () => {
       await fetchData();
     } catch (err) {
       console.error('Failed to generate slots:', err);
-      alert('Failed to generate slots. Please try again.');
+      alert('Failed to generate slots. Make sure you have availability set for at least one day.');
     } finally {
       setGenerating(false);
     }
@@ -205,7 +205,7 @@ export const Availability: React.FC = () => {
                   type="number"
                   min={1}
                   value={maxBookings}
-                  onChange={(e) => setMaxBookings(parseInt(e.target.value))}
+                  onChange={(e) => setMaxBookings(parseInt(e.target.value) || 1)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   placeholder="1"
                 />
@@ -267,7 +267,7 @@ export const Availability: React.FC = () => {
                             type="time"
                             value={avail?.startTime || ''}
                             onChange={(e) => {
-                              updateDayAvailability(day.value, { startTime: e.target.value });
+                              updateDayAvailability(day.value, { startTime: e.target.value || '' });
                             }}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md"
                             step="900"
@@ -279,7 +279,7 @@ export const Availability: React.FC = () => {
                             type="time"
                             value={avail?.endTime || ''}
                             onChange={(e) => {
-                              updateDayAvailability(day.value, { endTime: e.target.value });
+                              updateDayAvailability(day.value, { endTime: e.target.value || '' });
                             }}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md"
                             step="900"
