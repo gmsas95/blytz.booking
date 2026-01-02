@@ -135,6 +135,11 @@ func main() {
 		v1.POST("/businesses/:businessId/slots", handler.CreateSlot)
 		v1.DELETE("/businesses/:businessId/slots/:slotId", handler.DeleteSlot)
 
+		// Availability
+		v1.GET("/businesses/:businessId/availability", handler.GetAvailability)
+		v1.POST("/businesses/:businessId/availability", handler.SetAvailability)
+		v1.POST("/businesses/:businessId/slots/generate", handler.GenerateSlots)
+
 		// Bookings
 		v1.POST("/bookings", handler.CreateBooking)
 		v1.GET("/businesses/:businessId/bookings", handler.ListBookings)

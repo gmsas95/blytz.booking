@@ -17,14 +17,28 @@ const (
 )
 
 type Business struct {
-	ID          uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
-	Name        string    `json:"name" gorm:"not null"`
-	Slug        string    `json:"slug" gorm:"uniqueIndex;not null"`
-	Vertical    string    `json:"vertical" gorm:"not null"`
-	Description string    `json:"description"`
-	ThemeColor  string    `json:"theme_color" gorm:"default:'blue'"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID              uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	Name            string    `json:"name" gorm:"not null"`
+	Slug            string    `json:"slug" gorm:"uniqueIndex;not null"`
+	Vertical        string    `json:"vertical" gorm:"not null"`
+	Description     string    `json:"description"`
+	ThemeColor      string    `json:"theme_color" gorm:"default:'blue'"`
+	SlotDurationMin int       `json:"slot_duration_min" gorm:"default:30"`
+	MaxBookings     int       `json:"max_bookings" gorm:"default:1"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+type BusinessAvailability struct {
+	ID         uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	BusinessID uuid.UUID `json:"business_id" gorm:"type:uuid;not null;index"`
+	DayOfWeek  int       `json:"day_of_week" gorm:"not null;index"` // 0=Monday, 6=Sunday
+	StartTime  string    `json:"start_time" gorm:"not null"`
+	EndTime    string    `json:"end_time" gorm:"not null"`
+	IsClosed   bool      `json:"is_closed" gorm:"default:false"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+	Business   Business  `json:"-" gorm:"foreignKey:BusinessID"`
 }
 
 type Service struct {
@@ -41,14 +55,15 @@ type Service struct {
 }
 
 type Slot struct {
-	ID         uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
-	BusinessID uuid.UUID `json:"business_id" gorm:"type:uuid;not null;index"`
-	StartTime  time.Time `json:"start_time" gorm:"not null;index"`
-	EndTime    time.Time `json:"end_time" gorm:"not null"`
-	IsBooked   bool      `json:"is_booked" gorm:"default:false"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
-	Business   Business  `json:"business" gorm:"foreignKey:BusinessID"`
+	ID           uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	BusinessID   uuid.UUID `json:"business_id" gorm:"type:uuid;not null;index"`
+	StartTime    time.Time `json:"start_time" gorm:"not null;index"`
+	EndTime      time.Time `json:"end_time" gorm:"not null"`
+	IsBooked     bool      `json:"is_booked" gorm:"default:false"`
+	BookingCount int       `json:"booking_count" gorm:"default:0"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Business     Business  `json:"business" gorm:"foreignKey:BusinessID"`
 }
 
 type CustomerDetails struct {

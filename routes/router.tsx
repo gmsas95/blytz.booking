@@ -6,6 +6,7 @@ import { Confirmation } from '../screens/Confirmation';
 import { Login } from '../screens/Login';
 import { ForgotPassword } from '../screens/ForgotPassword';
 import { ResetPassword } from '../screens/ResetPassword';
+import { Availability } from '../screens/Availability';
 import { OperatorDashboard } from '../screens/OperatorDashboard';
 import { ProtectedRoute } from './ProtectedRoute';
 import { AuthProvider } from '../context/AuthContext';
@@ -45,14 +46,22 @@ export const router = createBrowserRouter([
          path: 'reset-password',
          element: <ResetPassword />,
        },
-      {
-        path: 'dashboard',
-        element: (
-          <ProtectedRoute>
-            <OperatorDashboard />
-          </ProtectedRoute>
-        ),
-      },
+       {
+         path: 'dashboard',
+         element: (
+           <ProtectedRoute>
+             <OperatorDashboard />
+           </ProtectedRoute>
+         ),
+       },
+       {
+         path: 'availability',
+         element: (
+           <ProtectedRoute>
+             <Availability />
+           </ProtectedRoute>
+         ),
+       },
     ],
   },
 ]);

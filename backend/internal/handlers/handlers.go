@@ -15,24 +15,26 @@ import (
 )
 
 type Handler struct {
-	Repo            *repository.Repository
-	AuthService     *services.AuthService
-	BusinessService *services.BusinessService
-	ServiceService  *services.ServiceService
-	SlotService     *services.SlotService
-	BookingService  *services.BookingService
-	EmailService    *email.EmailService
+	Repo                *repository.Repository
+	AuthService         *services.AuthService
+	BusinessService     *services.BusinessService
+	ServiceService      *services.ServiceService
+	SlotService         *services.SlotService
+	BookingService      *services.BookingService
+	EmailService        *email.EmailService
+	AvailabilityService *services.AvailabilityService
 }
 
 func NewHandler(repo *repository.Repository, emailConfig email.EmailConfig) *Handler {
 	return &Handler{
-		Repo:            repo,
-		AuthService:     services.NewAuthService(repo.DB),
-		BusinessService: services.NewBusinessService(repo.DB),
-		ServiceService:  services.NewServiceService(repo.DB),
-		SlotService:     services.NewSlotService(repo.DB),
-		BookingService:  services.NewBookingService(repo.DB),
-		EmailService:    email.NewEmailService(emailConfig),
+		Repo:                repo,
+		AuthService:         services.NewAuthService(repo.DB),
+		BusinessService:     services.NewBusinessService(repo.DB),
+		ServiceService:      services.NewServiceService(repo.DB),
+		SlotService:         services.NewSlotService(repo.DB),
+		BookingService:      services.NewBookingService(repo.DB),
+		EmailService:        email.NewEmailService(emailConfig),
+		AvailabilityService: services.NewAvailabilityService(repo.DB),
 	}
 }
 
@@ -727,4 +729,113 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password reset successfully"})
+}
+
+// Availability Handlers
+func (h *Handler) GetAvailability(c *gin.Context) {
+	businessID := c.Param("businessId")
+	businessUUID, err := uuid.Parse(businessID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
+		return
+	}
+
+	availabilities, err := h.AvailabilityService.GetByBusiness(businessUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch availability"})
+		return
+	}
+
+	response := make([]dto.BusinessAvailabilityResponse, len(availabilities))
+	for i, a := range availabilities {
+		response[i] = dto.BusinessAvailabilityResponse{
+			ID:         a.ID.String(),
+			BusinessID: a.BusinessID.String(),
+			DayOfWeek:  a.DayOfWeek,
+			StartTime:  a.StartTime,
+			EndTime:    a.EndTime,
+			IsClosed:   a.IsClosed,
+			CreatedAt:  a.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			UpdatedAt:  a.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		}
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func (h *Handler) SetAvailability(c *gin.Context) {
+	businessID := c.Param("businessId")
+	businessUUID, err := uuid.Parse(businessID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
+		return
+	}
+
+	var req dto.SetBusinessAvailabilityRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	availability := &models.BusinessAvailability{
+		BusinessID: businessUUID,
+		DayOfWeek:  *req.DayOfWeek,
+		StartTime:  "",
+		EndTime:    "",
+		IsClosed:   false,
+	}
+
+	if req.StartTime != nil {
+		availability.StartTime = *req.StartTime
+	}
+	if req.EndTime != nil {
+		availability.EndTime = *req.EndTime
+	}
+	if req.IsClosed != nil {
+		availability.IsClosed = *req.IsClosed
+	}
+
+	if err := h.AvailabilityService.Upsert(businessUUID, availability); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to save availability"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Availability updated successfully"})
+}
+
+func (h *Handler) GenerateSlots(c *gin.Context) {
+	businessID := c.Param("businessId")
+	businessUUID, err := uuid.Parse(businessID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
+		return
+	}
+
+	var req dto.GenerateSlotsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	slots, err := h.AvailabilityService.GenerateSlotsFromAvailability(businessUUID, req.StartDate, req.EndDate, req.DurationMin)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to generate slots"})
+		return
+	}
+
+	response := make([]dto.SlotResponse, len(slots))
+	for i, s := range slots {
+		response[i] = dto.SlotResponse{
+			ID:           s.ID.String(),
+			BusinessID:   s.BusinessID.String(),
+			StartTime:    s.StartTime.Format("2006-01-02T15:04:05Z07:00"),
+			EndTime:      s.EndTime.Format("2006-01-02T15:04:05Z07:00"),
+			IsBooked:     s.IsBooked,
+			BookingCount: s.BookingCount,
+			CreatedAt:    s.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			UpdatedAt:    s.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		}
+	}
+
+	c.JSON(http.StatusOK, response)
 }

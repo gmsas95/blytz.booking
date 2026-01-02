@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Calendar, LayoutDashboard, Settings, Plus, Trash2, Download, TrendingUp, DollarSign, Users, ChevronDown, Briefcase, Edit2, CreditCard, Bell, ShieldCheck, Loader2, Clock } from 'lucide-react';
+import { LogOut, Calendar, LayoutDashboard, Settings, Plus, Trash2, Download, TrendingUp, DollarSign, Users, ChevronDown, Briefcase, Edit2, CreditCard, Bell, ShieldCheck, Loader2, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { BookingStatus, Business, Service, Booking, Slot } from '../types';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -11,7 +11,7 @@ import { api } from '../api';
 export const OperatorDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'BOOKINGS' | 'SERVICES' | 'SLOTS' | 'SETTINGS'>('DASHBOARD');
+  const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'BOOKINGS' | 'SERVICES' | 'SLOTS' | 'AVAILABILITY' | 'SETTINGS'>('DASHBOARD');
   const [currentBusiness, setCurrentBusiness] = useState<Business | null>(null);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -403,7 +403,7 @@ export const OperatorDashboard: React.FC = () => {
           <NavItem id="DASHBOARD" label="Overview" icon={LayoutDashboard} />
           <NavItem id="BOOKINGS" label="Bookings" icon={Calendar} />
           <NavItem id="SERVICES" label="Services" icon={Briefcase} />
-          <NavItem id="SLOTS" label="Slots" icon={Clock} />
+          <NavItem id="AVAILABILITY" label="Availability" icon={Clock} />
           <NavItem id="SETTINGS" label="Settings" icon={Settings} />
         </div>
 
@@ -420,11 +420,11 @@ export const OperatorDashboard: React.FC = () => {
         <header className="mb-8 flex justify-between items-start">
            <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                  {activeTab === 'DASHBOARD' && 'Dashboard Overview'}
-                  {activeTab === 'BOOKINGS' && 'Bookings Management'}
-                  {activeTab === 'SERVICES' && 'Service Packages'}
-                  {activeTab === 'SLOTS' && 'Availability Slots'}
-                  {activeTab === 'SETTINGS' && 'Business Settings'}
+                 {activeTab === 'DASHBOARD' && 'Dashboard Overview'}
+                 {activeTab === 'BOOKINGS' && 'Bookings Management'}
+                 {activeTab === 'SERVICES' && 'Service Packages'}
+                 {activeTab === 'AVAILABILITY' && 'Weekly Availability'}
+                 {activeTab === 'SETTINGS' && 'Business Settings'}
               </h1>
               <p className="text-gray-500 mt-1">
                 {activeTab === 'DASHBOARD' && 'Welcome back, Operator.'}
@@ -440,11 +440,16 @@ export const OperatorDashboard: React.FC = () => {
                  <Plus className="h-4 w-4" /> Add Service
                </Button>
              )}
-             {activeTab === 'SLOTS' && (
-               <Button className="gap-2" onClick={() => setShowSlotForm(true)}>
-                 <Plus className="h-4 w-4" /> Add Slot
-               </Button>
-             )}
+              {activeTab === 'SLOTS' && (
+                <div className="flex gap-2">
+                  <Button className="gap-2" onClick={() => setShowSlotForm(true)}>
+                    <Plus className="h-4 w-4" /> Add Slot
+                  </Button>
+                  <Button className="gap-2 bg-blue-50 text-white hover:bg-blue-600" onClick={() => window.location.href = '/availability'}>
+                    <CalendarIcon className="h-4 w-4" /> Availability Settings
+                  </Button>
+                </div>
+              )}
         </header>
 
         {activeTab === 'DASHBOARD' && (

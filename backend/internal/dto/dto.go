@@ -37,30 +37,36 @@ type UserResponse struct {
 // Business DTOs
 
 type BusinessResponse struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Slug        string `json:"slug"`
-	Vertical    string `json:"vertical"`
-	Description string `json:"description"`
-	ThemeColor  string `json:"themeColor"`
-	CreatedAt   string `json:"createdAt"`
-	UpdatedAt   string `json:"updatedAt"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Slug            string `json:"slug"`
+	Vertical        string `json:"vertical"`
+	Description     string `json:"description"`
+	ThemeColor      string `json:"themeColor"`
+	SlotDurationMin int    `json:"slotDurationMin"`
+	MaxBookings     int    `json:"maxBookings"`
+	CreatedAt       string `json:"createdAt"`
+	UpdatedAt       string `json:"updatedAt"`
 }
 
 type CreateBusinessRequest struct {
-	Name        string `json:"name" binding:"required"`
-	Slug        string `json:"slug" binding:"required"`
-	Vertical    string `json:"vertical" binding:"required"`
-	Description string `json:"description"`
-	ThemeColor  string `json:"themeColor"`
+	Name            string `json:"name" binding:"required"`
+	Slug            string `json:"slug" binding:"required"`
+	Vertical        string `json:"vertical" binding:"required"`
+	Description     string `json:"description"`
+	ThemeColor      string `json:"themeColor"`
+	SlotDurationMin int    `json:"slotDurationMin" binding:"required,min=15"`
+	MaxBookings     int    `json:"maxBookings" binding:"required,min=1"`
 }
 
 type UpdateBusinessRequest struct {
-	Name        *string `json:"name"`
-	Slug        *string `json:"slug"`
-	Vertical    *string `json:"vertical"`
-	Description *string `json:"description"`
-	ThemeColor  *string `json:"themeColor"`
+	Name            *string `json:"name"`
+	Slug            *string `json:"slug"`
+	Vertical        *string `json:"vertical"`
+	Description     *string `json:"description"`
+	ThemeColor      *string `json:"themeColor"`
+	SlotDurationMin *int    `json:"slotDurationMin" binding:"omitempty,min=15"`
+	MaxBookings     *int    `json:"maxBookings" binding:"omitempty,min=1"`
 }
 
 // Service DTOs
@@ -96,13 +102,14 @@ type UpdateServiceRequest struct {
 // Slot DTOs
 
 type SlotResponse struct {
-	ID         string `json:"id"`
-	BusinessID string `json:"businessId"`
-	StartTime  string `json:"startTime"`
-	EndTime    string `json:"endTime"`
-	IsBooked   bool   `json:"isBooked"`
-	CreatedAt  string `json:"createdAt"`
-	UpdatedAt  string `json:"updatedAt"`
+	ID           string `json:"id"`
+	BusinessID   string `json:"businessId"`
+	StartTime    string `json:"startTime"`
+	EndTime      string `json:"endTime"`
+	IsBooked     bool   `json:"isBooked"`
+	BookingCount int    `json:"bookingCount"`
+	CreatedAt    string `json:"createdAt"`
+	UpdatedAt    string `json:"updatedAt"`
 }
 
 type CreateSlotRequest struct {
@@ -114,6 +121,32 @@ type CreateSlotRequest struct {
 type UpdateSlotRequest struct {
 	StartTime *string `json:"startTime"`
 	EndTime   *string `json:"endTime"`
+}
+
+// Availability DTOs
+
+type BusinessAvailabilityResponse struct {
+	ID         string `json:"id"`
+	BusinessID string `json:"businessId"`
+	DayOfWeek  int    `json:"dayOfWeek"`
+	StartTime  string `json:"startTime"`
+	EndTime    string `json:"endTime"`
+	IsClosed   bool   `json:"isClosed"`
+	CreatedAt  string `json:"createdAt"`
+	UpdatedAt  string `json:"updatedAt"`
+}
+
+type SetBusinessAvailabilityRequest struct {
+	DayOfWeek *int    `json:"dayOfWeek" binding:"omitempty,min=0,max=6"`
+	StartTime *string `json:"startTime"`
+	EndTime   *string `json:"endTime" binding:"omitempty,gtfield=StartTime"`
+	IsClosed  *bool   `json:"isClosed"`
+}
+
+type GenerateSlotsRequest struct {
+	StartDate   string `json:"startDate" binding:"required"`
+	EndDate     string `json:"endDate" binding:"required,gtfield=StartDate"`
+	DurationMin int    `json:"durationMin" binding:"required,min=15"`
 }
 
 // Booking DTOs

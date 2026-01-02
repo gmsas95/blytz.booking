@@ -25,6 +25,16 @@ export interface Slot {
   startTime: string;
   endTime: string;
   isBooked: boolean;
+  bookingCount: number;
+}
+
+export interface BusinessAvailability {
+  id: string;
+  businessId: string;
+  dayOfWeek: number; // 0=Monday, 6=Sunday
+  startTime: string;
+  endTime: string;
+  isClosed: boolean;
 }
 
 export interface CustomerDetails {
@@ -261,6 +271,34 @@ class ApiClient {
   async cancelBooking(businessId: string, bookingId: string): Promise<{ message: string }> {
     return this.request<{ message: string }>(`/api/v1/businesses/${businessId}/bookings/${bookingId}`, {
       method: 'DELETE',
+    });
+  }
+
+  // Availability
+  async getAvailability(businessId: string): Promise<BusinessAvailability[]> {
+    return this.request<BusinessAvailability[]>(`/api/v1/businesses/${businessId}/availability`);
+  }
+
+  async setAvailability(businessId: string, data: {
+    dayOfWeek?: number;
+    startTime?: string;
+    endTime?: string;
+    isClosed?: boolean;
+  }): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/v1/businesses/${businessId}/availability`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async generateSlots(businessId: string, data: {
+    startDate: string;
+    endDate: string;
+    durationMin: number;
+  }): Promise<Slot[]> {
+    return this.request<Slot[]>(`/api/v1/businesses/${businessId}/slots/generate`, {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   }
 

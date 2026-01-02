@@ -18,13 +18,25 @@ func NewBookingService(db *gorm.DB) *BookingService {
 }
 
 func (s *BookingService) Create(booking *models.Booking) error {
-	// Check if slot exists and is available
+	// Get business to check capacity limits
+	var business models.Business
+	if err := s.DB.Where("id = ?", booking.BusinessID).First(&business).Error; err != nil {
+		return err
+	}
+
+	// Check if slot exists
 	var slot models.Slot
-	if err := s.DB.Where("id = ? AND is_booked = ?", booking.SlotID, false).First(&slot).Error; err != nil {
+	if err := s.DB.Where("id = ?", booking.SlotID).First(&slot).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return ErrBadRequest
 		}
 		return err
+	}
+
+	// Check capacity: count existing bookings for this time slot
+	bookingCount := slot.BookingCount
+	if bookingCount >= business.MaxBookings {
+		return ErrBadRequest // Slot is full
 	}
 
 	// Check if service exists
@@ -56,10 +68,18 @@ func (s *BookingService) Create(booking *models.Booking) error {
 		return err
 	}
 
-	// Mark slot as booked
-	if err := tx.Model(&models.Slot{}).Where("id = ?", booking.SlotID).Update("is_booked", true).Error; err != nil {
+	// Increment slot booking count
+	if err := tx.Model(&models.Slot{}).Where("id = ?", booking.SlotID).Update("booking_count", bookingCount+1).Error; err != nil {
 		tx.Rollback()
 		return err
+	}
+
+	// Mark slot as booked if at capacity
+	if bookingCount+1 >= business.MaxBookings {
+		if err := tx.Model(&models.Slot{}).Where("id = ?", booking.SlotID).Update("is_booked", true).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
 
 	return tx.Commit().Error
@@ -105,6 +125,12 @@ func (s *BookingService) Cancel(id uuid.UUID) error {
 		return err
 	}
 
+	// Get slot
+	var slot models.Slot
+	if err := s.DB.Where("id = ?", booking.SlotID).First(&slot).Error; err != nil {
+		return err
+	}
+
 	// Start transaction
 	tx := s.DB.Begin()
 	defer func() {
@@ -119,7 +145,15 @@ func (s *BookingService) Cancel(id uuid.UUID) error {
 		return err
 	}
 
-	// Mark slot as available again
+	// Decrement slot booking count
+	if slot.BookingCount > 0 {
+		if err := tx.Model(&models.Slot{}).Where("id = ?", booking.SlotID).Update("booking_count", slot.BookingCount-1).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// Mark slot as available
 	if err := tx.Model(&models.Slot{}).Where("id = ?", booking.SlotID).Update("is_booked", false).Error; err != nil {
 		tx.Rollback()
 		return err
