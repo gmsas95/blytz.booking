@@ -48,6 +48,7 @@ type CreateBusinessRequest struct {
 
 type UpdateBusinessRequest struct {
 	Name        *string `json:"name"`
+	Slug        *string `json:"slug"`
 	Vertical    *string `json:"vertical"`
 	Description *string `json:"description"`
 	ThemeColor  *string `json:"theme_color"`

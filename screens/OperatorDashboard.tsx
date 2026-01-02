@@ -31,6 +31,7 @@ export const OperatorDashboard: React.FC = () => {
 
   const [businessForm, setBusinessForm] = useState({
     name: '',
+    slug: '',
     vertical: '',
     description: '',
     theme_color: 'blue'
@@ -44,6 +45,7 @@ export const OperatorDashboard: React.FC = () => {
     if (currentBusiness) {
       setBusinessForm({
         name: currentBusiness.name,
+        slug: currentBusiness.slug,
         vertical: currentBusiness.vertical,
         description: currentBusiness.description,
         theme_color: currentBusiness.themeColor
@@ -107,10 +109,9 @@ export const OperatorDashboard: React.FC = () => {
 
     try {
       setSaving(true);
-      const slug = businessForm.name.toLowerCase().replace(/\s+/g, '-');
       await api.createBusiness({
         name: businessForm.name,
-        slug: slug,
+        slug: businessForm.slug,
         vertical: businessForm.vertical || 'General',
         description: businessForm.description,
         theme_color: businessForm.theme_color
@@ -590,10 +591,17 @@ export const OperatorDashboard: React.FC = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">URL Slug</label>
                         <input
                           type="text"
-                          value={currentBusiness?.slug || ''}
-                          disabled
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
+                          value={businessForm.slug || ''}
+                          onChange={(e) => {
+                            const slug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+                            setBusinessForm({...businessForm, slug: slug});
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                          placeholder="my-business"
                         />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Your public URL: blytz.cloud/business/{businessForm.slug || 'your-slug'}
+                        </p>
                       </div>
                       <div className="col-span-1 md:col-span-2">
                          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>

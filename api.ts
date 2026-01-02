@@ -186,7 +186,13 @@ class ApiClient {
   }): Promise<Service> {
     return this.request<Service>(`/api/v1/businesses/${businessId}/services`, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        name: data.name,
+        description: data.description,
+        duration_min: data.duration_min,
+        total_price: data.total_price,
+        deposit_amount: data.deposit_amount,
+      }),
     });
   }
 

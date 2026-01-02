@@ -200,15 +200,16 @@ func (h *Handler) GetServicesByBusiness(c *gin.Context) {
 }
 
 func (h *Handler) CreateService(c *gin.Context) {
-	var req dto.CreateServiceRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	businessIDStr := c.Param("businessId")
+	businessID, err := uuid.Parse(businessIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
 		return
 	}
 
-	businessID, err := uuid.Parse(req.BusinessID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
+	var req dto.CreateServiceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
