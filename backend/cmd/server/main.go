@@ -6,6 +6,7 @@ import (
 
 	"blytz.cloud/backend/config"
 	"blytz.cloud/backend/internal/auth"
+	"blytz.cloud/backend/internal/email"
 	"blytz.cloud/backend/internal/handlers"
 	"blytz.cloud/backend/internal/repository"
 
@@ -38,7 +39,13 @@ func main() {
 	}
 
 	// Initialize handlers
-	handler := handlers.NewHandler(repo)
+	handler := handlers.NewHandler(repo, email.EmailConfig{
+		From:     cfg.Email.From,
+		Host:     cfg.Email.Host,
+		Port:     cfg.Email.Port,
+		Username: cfg.Email.Username,
+		Password: cfg.Email.Password,
+	})
 
 	// Setup Gin router
 	r := gin.Default()
@@ -85,6 +92,8 @@ func main() {
 		// Auth routes (public)
 		v1.POST("/auth/register", handler.Register)
 		v1.POST("/auth/login", handler.Login)
+		v1.POST("/auth/forgot-password", handler.ForgotPassword)
+		v1.POST("/auth/reset-password", handler.ResetPassword)
 
 		// Protected routes
 		v1.GET("/auth/me", auth.AuthMiddleware(), func(c *gin.Context) {

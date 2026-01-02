@@ -10,6 +10,7 @@ type Config struct {
 	Database DatabaseConfig
 	Redis    RedisConfig
 	JWT      JWTConfig
+	Email    EmailConfig
 }
 
 type ServerConfig struct {
@@ -36,6 +37,14 @@ type JWTConfig struct {
 	Secret string
 }
 
+type EmailConfig struct {
+	From     string
+	Host     string
+	Port     int
+	Username string
+	Password string
+}
+
 func LoadConfig() *Config {
 	return &Config{
 		Server: ServerConfig{
@@ -57,6 +66,13 @@ func LoadConfig() *Config {
 		},
 		JWT: JWTConfig{
 			Secret: getEnv("JWT_SECRET", "change-me-in-production"),
+		},
+		Email: EmailConfig{
+			From:     getEnv("EMAIL_FROM", "noreply@blytz.cloud"),
+			Host:     getEnv("EMAIL_HOST", "smtp.gmail.com"),
+			Port:     getEnvAsInt("EMAIL_PORT", 587),
+			Username: getEnv("EMAIL_USERNAME", ""),
+			Password: getEnv("EMAIL_PASSWORD", ""),
 		},
 	}
 }

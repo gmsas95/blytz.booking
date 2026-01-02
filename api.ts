@@ -138,6 +138,21 @@ class ApiClient {
     localStorage.removeItem('token');
   }
 
+  // Password Reset
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/api/v1/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(token: string, password: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/api/v1/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    });
+  }
+
   // Businesses
   async getBusinesses(): Promise<Business[]> {
     return this.request<Business[]>('/api/v1/businesses');

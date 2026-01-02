@@ -1,6 +1,10 @@
 package services
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"time"
+
 	"blytz.cloud/backend/internal/auth"
 	"blytz.cloud/backend/internal/models"
 
@@ -95,4 +99,59 @@ func (s *AuthService) GetByEmail(email string) (*models.User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (s *AuthService) ForgotPassword(email string) (string, error) {
+	// Find user
+	user, err := s.GetByEmail(email)
+	if err != nil {
+		return "", ErrNotFound
+	}
+
+	// Generate reset token
+	token := generateRandomToken()
+
+	// Save token and expiration (1 hour)
+	now := time.Now()
+	expires := now.Add(1 * time.Hour)
+
+	if err := s.DB.Model(user).Updates(map[string]interface{}{
+		"password_reset_token": token,
+		"password_reset_at":    expires,
+	}).Error; err != nil {
+		return "", err
+	}
+
+	return token, nil
+}
+
+func (s *AuthService) ResetPassword(token, newPassword string) error {
+	// Find user with valid token
+	var user models.User
+	err := s.DB.Where("password_reset_token = ? AND password_reset_at > ?", token, time.Now()).First(&user).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return ErrBadRequest
+		}
+		return err
+	}
+
+	// Hash new password
+	hashedPassword, err := auth.HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	// Update password and clear token
+	return s.DB.Model(&user).Updates(map[string]interface{}{
+		"password_hash":        hashedPassword,
+		"password_reset_token": nil,
+		"password_reset_at":    nil,
+	}).Error
+}
+
+func generateRandomToken() string {
+	b := make([]byte, 32)
+	rand.Read(b)
+	return hex.EncodeToString(b)
 }

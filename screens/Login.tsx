@@ -92,18 +92,27 @@ export const Login: React.FC = () => {
           </Button>
         </form>
         
-        <div className="text-center">
-          <button
-            type="button"
-            onClick={() => {
-              setIsRegister(!isRegister);
-              setError('');
-            }}
-            className="text-sm text-gray-600 hover:text-gray-900 underline"
-          >
-            {isRegister ? 'Already have an account? Login' : "Don't have an account? Register"}
-          </button>
-        </div>
+         <div className="text-center space-y-3">
+           {!isRegister && (
+             <button
+               type="button"
+               onClick={() => navigate('/forgot-password')}
+               className="text-sm text-gray-600 hover:text-gray-900 underline"
+             >
+               Forgot Password?
+             </button>
+           )}
+           <button
+             type="button"
+             onClick={() => {
+               setIsRegister(!isRegister);
+               setError('');
+             }}
+             className="text-sm text-gray-600 hover:text-gray-900 underline"
+           >
+             {isRegister ? 'Already have an account? Login' : "Don't have an account? Register"}
+           </button>
+         </div>
       </div>
     </div>
   );

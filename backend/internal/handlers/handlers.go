@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"blytz.cloud/backend/internal/dto"
+	"blytz.cloud/backend/internal/email"
 	"blytz.cloud/backend/internal/models"
 	"blytz.cloud/backend/internal/repository"
 	"blytz.cloud/backend/internal/services"
@@ -20,9 +21,10 @@ type Handler struct {
 	ServiceService  *services.ServiceService
 	SlotService     *services.SlotService
 	BookingService  *services.BookingService
+	EmailService    *email.EmailService
 }
 
-func NewHandler(repo *repository.Repository) *Handler {
+func NewHandler(repo *repository.Repository, emailConfig email.EmailConfig) *Handler {
 	return &Handler{
 		Repo:            repo,
 		AuthService:     services.NewAuthService(repo.DB),
@@ -30,6 +32,7 @@ func NewHandler(repo *repository.Repository) *Handler {
 		ServiceService:  services.NewServiceService(repo.DB),
 		SlotService:     services.NewSlotService(repo.DB),
 		BookingService:  services.NewBookingService(repo.DB),
+		EmailService:    email.NewEmailService(emailConfig),
 	}
 }
 
@@ -500,6 +503,17 @@ func (h *Handler) CreateBooking(c *gin.Context) {
 		return
 	}
 
+	// Send booking confirmation email
+	if h.EmailService != nil {
+		_ = h.EmailService.SendBookingConfirmation(
+			booking.Customer.Email,
+			booking.Customer.Name,
+			booking.ServiceName,
+			booking.SlotTime.Format("2006-01-02 15:04"),
+			booking.DepositPaid,
+		)
+	}
+
 	c.JSON(http.StatusCreated, dto.BookingResponse{
 		ID:          booking.ID.String(),
 		BusinessID:  booking.BusinessID.String(),
@@ -596,6 +610,16 @@ func (h *Handler) CancelBooking(c *gin.Context) {
 		return
 	}
 
+	// Send cancellation email
+	if h.EmailService != nil {
+		_ = h.EmailService.SendBookingCancellation(
+			booking.Customer.Email,
+			booking.Customer.Name,
+			booking.ServiceName,
+			booking.SlotTime.Format("2006-01-02 15:04"),
+		)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Booking cancelled successfully"})
 }
 
@@ -655,4 +679,52 @@ func (h *Handler) Login(c *gin.Context) {
 			CreatedAt: user.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		},
 	})
+}
+
+func (h *Handler) ForgotPassword(c *gin.Context) {
+	var req dto.ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	token, err := h.AuthService.ForgotPassword(req.Email)
+	if err != nil {
+		// Don't reveal if email exists - return success anyway
+		if err == services.ErrNotFound {
+			c.JSON(http.StatusOK, gin.H{"message": "If an account exists with this email, a password reset link has been sent"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to process request"})
+		return
+	}
+
+	// Send email with reset token
+	if h.EmailService != nil {
+		user, _ := h.AuthService.GetByEmail(req.Email)
+		if user != nil {
+			_ = h.EmailService.SendPasswordReset(user.Email, user.Name, token)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "If an account exists with this email, a password reset link has been sent"})
+}
+
+func (h *Handler) ResetPassword(c *gin.Context) {
+	var req dto.ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	if err := h.AuthService.ResetPassword(req.Token, req.Password); err != nil {
+		if err == services.ErrBadRequest {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid or expired reset token"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to reset password"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password reset successfully"})
 }

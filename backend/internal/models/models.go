@@ -77,12 +77,14 @@ type Booking struct {
 
 // User model for operators
 type User struct {
-	ID           uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
-	Email        string    `json:"email" gorm:"uniqueIndex;not null"`
-	Name         string    `json:"name"`
-	PasswordHash string    `json:"-" gorm:"not null"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID                 uuid.UUID  `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	Email              string     `json:"email" gorm:"uniqueIndex;not null"`
+	Name               string     `json:"name"`
+	PasswordHash       string     `json:"-" gorm:"not null"`
+	PasswordResetToken *string    `json:"-" gorm:"index"`
+	PasswordResetAt    *time.Time `json:"-"`
+	CreatedAt          time.Time  `json:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at"`
 }
 
 // BeforeCreate hook for GORM
