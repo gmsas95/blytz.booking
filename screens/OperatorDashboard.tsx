@@ -303,11 +303,12 @@ export const OperatorDashboard: React.FC = () => {
 
     try {
       setSaving(true);
+      const avail = getDayAvailability(dayOfWeek);
       await api.setAvailability(currentBusiness.id, {
         dayOfWeek: updatedData.dayOfWeek,
         startTime: updatedData.startTime || null,
         endTime: updatedData.endTime || null,
-        isClosed: updatedData.isClosed,
+        isClosed: updatedData.isClosed !== undefined ? updatedData.isClosed : (avail?.isClosed || false),
       });
       await fetchData();
       setEditingDay(prev => {
@@ -897,20 +898,25 @@ export const OperatorDashboard: React.FC = () => {
                              <CalendarIcon className="h-5 w-5 text-gray-400" />
                              <span className="font-semibold text-gray-900">{day.name}</span>
                            </div>
-                           <label className="flex items-center gap-2 cursor-pointer">
-                             <input
-                               type="checkbox"
-                               checked={isClosed}
-                               onChange={(e) => {
-                                 handleSaveDay(day.value, {
-                                   dayOfWeek: day.value,
-                                   isClosed: e.target.checked,
-                                 });
-                               }}
-                               className="w-4 h-4 text-gray-600 rounded"
-                             />
-                             <span className="text-sm text-gray-600">Closed</span>
-                           </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={isClosed}
+                                onChange={(e) => {
+                                  handleSaveDay(day.value, {
+                                    dayOfWeek: day.value,
+                                    isClosed: e.target.checked,
+                                  });
+                                  setEditingDay(prev => {
+                                    const newState = { ...prev };
+                                    delete newState[day.value];
+                                    return newState;
+                                  });
+                                }}
+                                className="w-4 h-4 text-gray-600 rounded"
+                              />
+                              <span className="text-sm text-gray-600">Closed</span>
+                            </label>
                          </div>
 
                           {!isClosed && (
