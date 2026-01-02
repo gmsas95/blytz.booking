@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Calendar, LayoutDashboard, Settings, Plus, Trash2, Download, TrendingUp, DollarSign, Users, ChevronDown, Briefcase, Edit2, CreditCard, Bell, ShieldCheck, Loader2 } from 'lucide-react';
-import { BookingStatus, Business, Service, Booking } from '../types';
+import { BookingStatus, Business, Service, Booking, Slot } from '../types';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -21,11 +21,14 @@ export const OperatorDashboard: React.FC = () => {
   const [saving, setSaving] = useState(false);
   
   const [showServiceForm, setShowServiceForm] = useState(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
   const [serviceForm, setServiceForm] = useState({
     name: '',
     description: '',
     duration_min: 60,
     total_price: 0,
+          <NavItem id="SLOTS" label="Slots" icon={Clock} />
+
     deposit_amount: 0
   });
 
@@ -168,10 +171,237 @@ export const OperatorDashboard: React.FC = () => {
     }
   };
 
+  const handleEditService = (service: Service) => {
+    setEditingService(service);
+    setServiceForm({
+      name: service.name,
+      description: service.description,
+      durationMin: service.durationMin,
+      totalPrice: service.totalPrice,
+      depositAmount: service.depositAmount
+    });
+    setShowServiceForm(true);
+  };
+
+  const handleUpdateService = async () => {
+    if (!currentBusiness || !editingService) return;
+
+    try {
+      setSaving(true);
+      await api.updateService(currentBusiness.id, editingService.id, serviceForm);
+      setShowServiceForm(false);
+      setEditingService(null);
+      setServiceForm({
+        name: '',
+        description: '',
+        durationMin: 60,
+        totalPrice: 0,
+        depositAmount: 0
+      });
+      await fetchData();
+      alert('Service updated successfully!');
+    } catch (err) {
+      console.error('Failed to update service:', err);
+      alert('Failed to update service. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCreateSlot = async () => {
+    if (!currentBusiness) return;
+
+    try {
+      setSaving(true);
+      await api.createSlot(currentBusiness.id, slotForm);
+      setShowSlotForm(false);
+      setSlotForm({
+        startTime: '',
+        endTime: ''
+      });
+      await fetchData();
+      alert('Slot created successfully!');
+    } catch (err) {
+      console.error('Failed to create slot:', err);
+      alert('Failed to create slot. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteSlot = async (slotId: string) => {
+    if (!currentBusiness) return;
+
+    if (!confirm('Are you sure you want to delete this slot?')) return;
+
+    try {
+      setSaving(true);
+      await api.deleteSlot(currentBusiness.id, slotId);
+      await fetchData();
+      alert('Slot deleted successfully!');
+    } catch (err) {
+      console.error('Failed to delete slot:', err);
+      alert('Failed to delete slot. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const fmtDate = (iso: string) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
+  const handleEditService = (service: Service) => {
+    setEditingService(service);
+    setServiceForm({
+      name: service.name,
+      description: service.description,
+      durationMin: service.durationMin,
+      totalPrice: service.totalPrice,
+      depositAmount: service.depositAmount
+    });
+    setShowServiceForm(true);
+  };
+
+  const handleUpdateService = async () => {
+    if (!currentBusiness || !editingService) return;
+
+    try {
+      setSaving(true);
+      await api.updateService(currentBusiness.id, editingService.id, serviceForm);
+      setShowServiceForm(false);
+      setEditingService(null);
+      setServiceForm({
+        name: '',
+        description: '',
+        durationMin: 60,
+        totalPrice: 0,
+        depositAmount: 0
+      });
+      await fetchData();
+      alert('Service updated successfully!');
+    } catch (err) {
+      console.error('Failed to update service:', err);
+      alert('Failed to update service. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCreateSlot = async () => {
+    if (!currentBusiness) return;
+
+    try {
+      setSaving(true);
+      await api.createSlot(currentBusiness.id, slotForm);
+      setShowSlotForm(false);
+      setSlotForm({
+        startTime: '',
+        endTime: ''
+      });
+      await fetchData();
+      alert('Slot created successfully!');
+    } catch (err) {
+      console.error('Failed to create slot:', err);
+      alert('Failed to create slot. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteSlot = async (slotId: string) => {
+    if (!currentBusiness) return;
+
+    if (!confirm('Are you sure you want to delete this slot?')) return;
+
+    try {
+      setSaving(true);
+      await api.deleteSlot(currentBusiness.id, slotId);
+      await fetchData();
+      alert('Slot deleted successfully!');
+    } catch (err) {
+      console.error('Failed to delete slot:', err);
+      alert('Failed to delete slot. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+  const handleEditService = (service: Service) => {
+    setEditingService(service);
+    setServiceForm({
+      name: service.name,
+      description: service.description,
+      durationMin: service.durationMin,
+      totalPrice: service.totalPrice,
+      depositAmount: service.depositAmount
+    });
+    setShowServiceForm(true);
+  };
+
+  const handleUpdateService = async () => {
+    if (!currentBusiness || !editingService) return;
+
+    try {
+      setSaving(true);
+      await api.updateService(currentBusiness.id, editingService.id, serviceForm);
+      setShowServiceForm(false);
+      setEditingService(null);
+      setServiceForm({
+        name: '',
+        description: '',
+        durationMin: 60,
+        totalPrice: 0,
+        depositAmount: 0
+      });
+      await fetchData();
+      alert('Service updated successfully!');
+    } catch (err) {
+      console.error('Failed to update service:', err);
+      alert('Failed to update service. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCreateSlot = async () => {
+    if (!currentBusiness) return;
+
+    try {
+      setSaving(true);
+      await api.createSlot(currentBusiness.id, slotForm);
+      setShowSlotForm(false);
+      setSlotForm({
+        startTime: '',
+        endTime: ''
+      });
+      await fetchData();
+      alert('Slot created successfully!');
+    } catch (err) {
+      console.error('Failed to create slot:', err);
+      alert('Failed to create slot. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteSlot = async (slotId: string) => {
+    if (!currentBusiness) return;
+
+    if (!confirm('Are you sure you want to delete this slot?')) return;
+
+    try {
+      setSaving(true);
+      await api.deleteSlot(currentBusiness.id, slotId);
+      await fetchData();
+      alert('Slot deleted successfully!');
+    } catch (err) {
+      console.error('Failed to delete slot:', err);
+      alert('Failed to delete slot. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
   const fmtMoney = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
   const myBookings = bookings;
+const mySlots = slots;
   const myServices = services;
   const totalRev = myBookings.reduce((acc, curr) => acc + curr.depositPaid, 0);
 
@@ -550,14 +780,14 @@ export const OperatorDashboard: React.FC = () => {
                              <p className="text-sm text-gray-500">Required Deposit</p>
                              <p className="font-bold text-primary-600">{fmtMoney(service.depositAmount)}</p>
                           </div>
-                           <div className="flex items-center gap-1">
-                              <Button variant="ghost" className="p-2 text-gray-400 hover:text-blue-600">
-                                 <Edit2 className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" className="p-2 text-gray-400 hover:text-red-600" onClick={() => handleDeleteService(service.id)} disabled={saving}>
-                                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                              </Button>
-                          </div>
+                            <div className="flex items-center gap-1">
+                               <Button variant="ghost" className="p-2 text-gray-400 hover:text-blue-600" onClick={() => handleEditService(service)}>
+                                  <Edit2 className="h-4 w-4" />
+                               </Button>
+                               <Button variant="ghost" className="p-2 text-gray-400 hover:text-red-600" onClick={() => handleDeleteService(service.id)} disabled={saving}>
+                                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                               </Button>
+                           </div>
                       </div>
                    </Card>
                 ))
