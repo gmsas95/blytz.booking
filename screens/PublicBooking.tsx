@@ -5,7 +5,6 @@ import { api, Service, Slot, CustomerDetails, Business } from '../api';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
-import { MOCK_SERVICES, MOCK_SLOTS } from '../constants';
 
 type Step = 'SERVICE' | 'SLOT' | 'DETAILS' | 'PAYMENT';
 
@@ -66,9 +65,7 @@ export const PublicBooking: React.FC = () => {
         setServices(servicesData);
         setSlots(slotsData);
       } catch (err) {
-        console.error('Failed to fetch data, using mock data:', err);
-        setServices(MOCK_SERVICES.filter(s => s.businessId === business.id));
-        setSlots(MOCK_SLOTS.filter(s => s.businessId === business.id));
+        console.error('Failed to fetch data:', err);
       } finally {
         setLoadingServices(false);
         setLoadingSlots(false);
@@ -91,7 +88,7 @@ export const PublicBooking: React.FC = () => {
   };
 
   const handleSlotSelect = (slot: Slot) => {
-    if (slot.is_booked) return;
+    if (slot.isBooked) return;
     setSelectedSlot(slot);
   };
 
@@ -112,14 +109,10 @@ export const PublicBooking: React.FC = () => {
     setIsProcessing(true);
     try {
       const booking = await api.createBooking({
-        business_id: business.id,
-        service_id: selectedService.id,
-        slot_id: selectedSlot.id,
-        service_name: selectedService.name,
-        slot_time: selectedSlot.start_time,
+        businessId: business.id,
+        serviceId: selectedService.id,
+        slotId: selectedSlot.id,
         customer: customer,
-        deposit_paid: selectedService.deposit_amount,
-        total_price: selectedService.total_price,
       });
 
       navigate('/confirmation');
@@ -139,7 +132,7 @@ export const PublicBooking: React.FC = () => {
   };
 
   // Dynamic Theme Color
-  const brandStyle = { color: business.theme_color };
+  const brandStyle = business ? { color: business.themeColor } : {};
 
   return (
     <div className="w-full min-h-screen bg-white pb-24 font-sans">
@@ -150,10 +143,10 @@ export const PublicBooking: React.FC = () => {
               <ChevronLeft className="h-4 w-4 mr-1" />
               {step === 'SERVICE' ? 'Back to Directory' : 'Back'}
             </button>
-            <h2 className="text-lg font-bold text-gray-900">{business.name}</h2>
+            <h2 className="text-lg font-bold text-gray-900">{business?.name || 'Loading...'}</h2>
          </div>
          <div className="h-8 w-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold">
-            {business.name.substring(0,1)}
+            {business?.name?.substring(0,1) || '?'}
          </div>
       </div>
 
@@ -166,10 +159,10 @@ export const PublicBooking: React.FC = () => {
             {step === 'PAYMENT' && "Secure Deposit"}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            {step === 'SERVICE' && "Choose the package that fits your needs."}
+            {step === 'SERVICE' && "Choose a package that fits your needs."}
             {step === 'SLOT' && "Select an available opening for your session."}
-            {step === 'DETAILS' && "Where should we send the confirmation?"}
-            {step === 'PAYMENT' && `A ${selectedService ? fmtMoney(selectedService.deposit_amount) : ''} deposit is required to confirm.`}
+            {step === 'DETAILS' && "Where should we send confirmation?"}
+            {step === 'PAYMENT' && `A ${selectedService ? fmtMoney(selectedService.depositAmount) : ''} deposit is required to confirm.`}
           </p>
         </div>
 
@@ -191,13 +184,13 @@ export const PublicBooking: React.FC = () => {
                     <div>
                       <h3 className="font-semibold text-gray-900">{service.name}</h3>
                       <p className="text-sm text-gray-500 mt-1 line-clamp-2">{service.description}</p>
-                      <p className="text-xs text-gray-400 mt-2">{service.duration_min} minutes</p>
+                      <p className="text-xs text-gray-400 mt-2">{service.durationMin} minutes</p>
                     </div>
                     <div className="text-right">
-                      <span className="block font-medium text-gray-900">{fmtMoney(service.total_price)}</span>
-                      {service.deposit_amount < service.total_price && (
+                      <span className="block font-medium text-gray-900">{fmtMoney(service.totalPrice)}</span>
+                      {service.depositAmount < service.totalPrice && (
                         <span className="block text-xs font-medium text-primary-600">
-                          Deposit: {fmtMoney(service.deposit_amount)}
+                          Deposit: {fmtMoney(service.depositAmount)}
                         </span>
                       )}
                     </div>
@@ -216,7 +209,7 @@ export const PublicBooking: React.FC = () => {
               {[0, 1, 2, 3].map(offset => {
                 const d = new Date();
                 d.setDate(d.getDate() + offset);
-                const isSelected = offset === (selectedSlot ? (new Date(selectedSlot.start_time).getDate() - new Date().getDate()) : -1);
+                const isSelected = offset === (selectedSlot ? (new Date(selectedSlot.startTime).getDate() - new Date().getDate()) : -1);
                 return (
                   <button
                     key={offset}
@@ -237,10 +230,10 @@ export const PublicBooking: React.FC = () => {
                 return (
                   <button
                     key={slot.id}
-                    disabled={slot.is_booked}
+                    disabled={slot.isBooked}
                     onClick={() => handleSlotSelect(slot)}
                     className={`w-full flex items-center justify-between p-4 rounded-lg border text-left transition-all ${
-                      slot.is_booked
+                      slot.isBooked
                         ? 'bg-gray-100 border-gray-100 text-gray-400 cursor-not-allowed'
                         : selectedSlot?.id === slot.id
                           ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500'
@@ -250,10 +243,10 @@ export const PublicBooking: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <Clock className={`h-4 w-4 ${selectedSlot?.id === slot.id ? 'text-primary-600' : 'text-gray-400'}`} />
                       <span className={`font-medium ${selectedSlot?.id === slot.id ? 'text-primary-900' : 'text-gray-900'}`}>
-                        {fmtTime(slot.start_time)} - {fmtTime(slot.end_time)}
+                        {fmtTime(slot.startTime)} - {fmtTime(slot.endTime)}
                       </span>
                     </div>
-                    {slot.is_booked && <span className="text-xs font-medium">Booked</span>}
+                    {slot.isBooked && <span className="text-xs font-medium">Booked</span>}
                     {selectedSlot?.id === slot.id && <Check className="h-4 w-4 text-primary-600" />}
                   </button>
                 );
@@ -322,23 +315,23 @@ export const PublicBooking: React.FC = () => {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Date</span>
-                <span className="font-medium text-gray-900">{fmtDate(selectedSlot.start_time)}</span>
+                <span className="font-medium text-gray-900">{fmtDate(selectedSlot.startTime)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Time</span>
-                <span className="font-medium text-gray-900">{fmtTime(selectedSlot.start_time)}</span>
+                <span className="font-medium text-gray-900">{fmtTime(selectedSlot.startTime)}</span>
               </div>
               <div className="h-px bg-gray-200 my-2"></div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Total</span>
-                <span className="text-gray-900">{fmtMoney(selectedService.total_price)}</span>
+                <span className="text-gray-900">{fmtMoney(selectedService.totalPrice)}</span>
               </div>
               <div className="flex justify-between text-base font-semibold text-primary-700">
                 <span>Due Now (Deposit)</span>
-                <span>{fmtMoney(selectedService.deposit_amount)}</span>
+                <span>{fmtMoney(selectedService.depositAmount)}</span>
               </div>
-              {selectedService.deposit_amount < selectedService.total_price && (
-                 <p className="text-xs text-gray-500 text-right mt-1">Remaining {fmtMoney(selectedService.total_price - selectedService.deposit_amount)} due at appointment.</p>
+              {selectedService.depositAmount < selectedService.totalPrice && (
+                 <p className="text-xs text-gray-500 text-right mt-1">Remaining {fmtMoney(selectedService.totalPrice - selectedService.depositAmount)} due at appointment.</p>
               )}
             </div>
 
@@ -364,7 +357,7 @@ export const PublicBooking: React.FC = () => {
                 isLoading={isProcessing}
                 variant="primary"
               >
-                Pay {fmtMoney(selectedService.deposit_amount)} & Confirm
+                Pay {fmtMoney(selectedService.depositAmount)} & Confirm
               </Button>
               <div className="mt-6 flex justify-center">
                  <div className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold flex items-center gap-1">

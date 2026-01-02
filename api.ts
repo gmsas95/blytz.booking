@@ -162,9 +162,10 @@ class ApiClient {
 
   async updateBusiness(id: string, data: {
     name?: string;
+    slug?: string;
     vertical?: string;
     description?: string;
-    theme_color?: string;
+    themeColor?: string;
   }): Promise<{ message: string }> {
     return this.request<{ message: string }>(`/api/v1/businesses/${id}`, {
       method: 'PUT',
@@ -180,19 +181,13 @@ class ApiClient {
   async createService(businessId: string, data: {
     name: string;
     description?: string;
-    duration_min: number;
-    total_price: number;
-    deposit_amount: number;
+    durationMin: number;
+    totalPrice: number;
+    depositAmount: number;
   }): Promise<Service> {
     return this.request<Service>(`/api/v1/businesses/${businessId}/services`, {
       method: 'POST',
-      body: JSON.stringify({
-        name: data.name,
-        description: data.description,
-        duration_min: data.duration_min,
-        total_price: data.total_price,
-        deposit_amount: data.deposit_amount,
-      }),
+      body: JSON.stringify(data),
     });
   }
 
@@ -208,7 +203,7 @@ class ApiClient {
   }
 
   // Bookings
-  async createBooking(booking: Omit<Booking, 'id' | 'status' | 'created_at' | 'updated_at'>): Promise<Booking> {
+  async createBooking(booking: Omit<Booking, 'id' | 'status' | 'createdAt' | 'updatedAt'>): Promise<Booking> {
     return this.request<Booking>('/api/v1/bookings', {
       method: 'POST',
       body: JSON.stringify(booking),
