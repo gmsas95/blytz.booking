@@ -7,6 +7,8 @@ export interface Business {
   vertical: string;
   description: string;
   theme_color: string;
+  slotDurationMin: number;
+  maxBookings: number;
 }
 
 export interface Service {

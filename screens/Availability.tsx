@@ -48,11 +48,9 @@ export const Availability: React.FC = () => {
         const selectedBusiness = currentBusiness || businessesData[0];
         setCurrentBusiness(selectedBusiness);
         
-        const [availabilityData] = await Promise.all([
-          api.getAvailability(selectedBusiness.id),
-        ]);
-        
-        setAvailability(availabilityData[0]);
+        const availabilityData = await api.getAvailability(selectedBusiness.id);
+
+        setAvailability(availabilityData);
         setDurationMin(selectedBusiness.slotDurationMin);
         setMaxBookings(selectedBusiness.maxBookings);
       }
