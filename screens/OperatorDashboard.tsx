@@ -16,6 +16,7 @@ export const OperatorDashboard: React.FC = () => {
   const [generatingSlots, setGeneratingSlots] = useState(false);
   const [durationMin, setDurationMin] = useState(30);
   const [maxBookings, setMaxBookings] = useState(1);
+  const [editingDay, setEditingDay] = useState<{[key: number]: {startTime: string, endTime: string}}>({});
   const [currentBusiness, setCurrentBusiness] = useState<Business | null>(null);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -304,11 +305,16 @@ export const OperatorDashboard: React.FC = () => {
       setSaving(true);
       await api.setAvailability(currentBusiness.id, {
         dayOfWeek: updatedData.dayOfWeek,
-        startTime: updatedData.startTime,
-        endTime: updatedData.endTime,
+        startTime: updatedData.startTime || null,
+        endTime: updatedData.endTime || null,
         isClosed: updatedData.isClosed,
       });
       await fetchData();
+      setEditingDay(prev => {
+        const newState = { ...prev };
+        delete newState[dayOfWeek];
+        return newState;
+      });
     } catch (err) {
       console.error('Failed to save availability:', err);
       alert('Failed to save availability. Please try again.');
@@ -907,57 +913,60 @@ export const OperatorDashboard: React.FC = () => {
                            </label>
                          </div>
 
-                         {!isClosed && (
-                           <div className="grid grid-cols-2 gap-4">
-                             <div>
-                               <label className="block text-sm text-gray-600 mb-1">Start Time</label>
-                               <input
-                                 type="time"
-                                 value={avail?.startTime || ''}
-                                 onChange={(e) => {
-                                   handleSaveDay(day.value, {
-                                     dayOfWeek: day.value,
-                                     startTime: e.target.value || '',
-                                     endTime: avail?.endTime || '',
-                                     isClosed: false,
-                                   });
-                                 }}
-                                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                 step="900"
-                               />
-                             </div>
-                             <div>
-                               <label className="block text-sm text-gray-600 mb-1">End Time</label>
-                               <input
-                                 type="time"
-                                 value={avail?.endTime || ''}
-                                 onChange={(e) => {
-                                   handleSaveDay(day.value, {
-                                     dayOfWeek: day.value,
-                                     startTime: avail?.startTime || '',
-                                     endTime: e.target.value || '',
-                                     isClosed: false,
-                                   });
-                                 }}
-                                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                 step="900"
-                               />
-                             </div>
-                           </div>
-                         )}
+                          {!isClosed && (
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm text-gray-600 mb-1">Start Time</label>
+                                <input
+                                  type="time"
+                                  value={editingDay[day.value]?.startTime || avail?.startTime || ''}
+                                  onChange={(e) => {
+                                    setEditingDay(prev => ({
+                                      ...prev,
+                                      [day.value]: { ...(prev[day.value] || {}), startTime: e.target.value }
+                                    }));
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                  step="900"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm text-gray-600 mb-1">End Time</label>
+                                <input
+                                  type="time"
+                                  value={editingDay[day.value]?.endTime || avail?.endTime || ''}
+                                  onChange={(e) => {
+                                    setEditingDay(prev => ({
+                                      ...prev,
+                                      [day.value]: { ...(prev[day.value] || {}), endTime: e.target.value }
+                                    }));
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                  step="900"
+                                />
+                              </div>
+                            </div>
+                          )}
 
-                         {!isClosed && avail?.startTime && avail?.endTime && (
-                           <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-100">
-                             <Button
-                               onClick={() => handleSaveDay(day.value, getDayAvailability(day.value))}
-                               disabled={saving}
-                               variant="outline"
-                               className="gap-2"
-                             >
-                               Save
-                             </Button>
-                           </div>
-                         )}
+                          {!isClosed && (editingDay[day.value]?.startTime || avail?.startTime) && (editingDay[day.value]?.endTime || avail?.endTime) && (
+                            <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-100">
+                              <Button
+                                onClick={() => {
+                                  handleSaveDay(day.value, {
+                                    dayOfWeek: day.value,
+                                    startTime: editingDay[day.value]?.startTime || avail?.startTime || '',
+                                    endTime: editingDay[day.value]?.endTime || avail?.endTime || '',
+                                    isClosed: false,
+                                  });
+                                }}
+                                disabled={saving}
+                                variant="outline"
+                                className="gap-2"
+                              >
+                                Save
+                              </Button>
+                            </div>
+                          )}
                        </div>
                      );
                    })}

@@ -139,13 +139,13 @@ type BusinessAvailabilityResponse struct {
 type SetBusinessAvailabilityRequest struct {
 	DayOfWeek *int    `json:"dayOfWeek" binding:"omitempty,min=0,max=6"`
 	StartTime *string `json:"startTime"`
-	EndTime   *string `json:"endTime" binding:"omitempty,gtfield=StartTime"`
+	EndTime   *string `json:"endTime"`
 	IsClosed  *bool   `json:"isClosed"`
 }
 
 type GenerateSlotsRequest struct {
 	StartDate   string `json:"startDate" binding:"required"`
-	EndDate     string `json:"endDate" binding:"required,gtfield=StartDate"`
+	EndDate     string `json:"endDate" binding:"required"`
 	DurationMin int    `json:"durationMin" binding:"required,min=15"`
 }
 
