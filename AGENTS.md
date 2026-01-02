@@ -35,12 +35,17 @@ Blytz.Cloud is a **booking management prototype** for freelancers and service bu
 - **Slot management** (create, delete, list slots from frontend)
 - **Email notification system** (SMTP-based, HTML templates)
 - **Password reset** (forgot password flow with token-based reset)
+- **Weekly availability scheduling** with working hours by day of week
+- **Auto-generate slots** from availability settings (e.g., 30-min intervals)
+- **Booking capacity limits** (max bookings per time slot)
+- **Incremental booking counts** for overlapping bookings
+- **Availability management UI** with weekly schedule picker
 
 ### ❌ Critical Missing Features
 - **Security**: No rate limiting, no input sanitization
 - **Business Logic**: No payment processing, notifications, or conflict resolution
 - **Booking Management**: No reschedule functionality (cancel works)
-- **Slot Management**: No bulk creation or recurring slots
+- **Slot Management**: No bulk creation or recurring slots (weekly scheduling implemented)
 - **Error Handling**: Basic error messages (error boundaries now added)
 
 ## Development Commands
