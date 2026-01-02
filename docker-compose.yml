@@ -1,5 +1,5 @@
 services:
-   # PostgreSQL Database
+  # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -15,7 +15,7 @@ services:
       timeout: 5s
       retries: 5
 
-   # Redis Cache
+  # Redis Cache
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -28,14 +28,14 @@ services:
       timeout: 5s
       retries: 5
 
-    # Go Backend API
-   backend:
-     build:
-       context: ./backend
-       dockerfile: Dockerfile
-     restart: unless-stopped
-     ports:
-       - "8080:3001"
+  # Go Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:3001"
     environment:
       SERVER_PORT: 3001
       ENV: production
@@ -55,7 +55,7 @@ services:
       redis:
         condition: service_healthy
 
-   # React Frontend
+  # React Frontend
   blytz-cloud:
     build:
       context: .
