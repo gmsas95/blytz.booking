@@ -55,6 +55,7 @@ func NewRepository(cfg *config.Config) (*Repository, error) {
 func (r *Repository) AutoMigrate() error {
 	return r.DB.AutoMigrate(
 		&models.Business{},
+		&models.BusinessAvailability{},
 		&models.Service{},
 		&models.Slot{},
 		&models.Booking{},
