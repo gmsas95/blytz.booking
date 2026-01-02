@@ -69,7 +69,6 @@ type ServiceResponse struct {
 }
 
 type CreateServiceRequest struct {
-	BusinessID    string  `json:"business_id" binding:"required,uuid"`
 	Name          string  `json:"name" binding:"required"`
 	Description   string  `json:"description"`
 	DurationMin   int     `json:"duration_min" binding:"required,min=1"`

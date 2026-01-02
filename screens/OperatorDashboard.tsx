@@ -637,23 +637,23 @@ export const OperatorDashboard: React.FC = () => {
                       <Settings className="h-5 w-5 text-gray-400" />
                       Branding & Theme
                    </h3>
-                   <div className="flex items-center gap-4">
-                      <div
-                        className={`w-12 h-12 rounded-full cursor-pointer ring-2 ring-offset-2 ${businessForm.theme_color === 'blue' ? 'ring-blue-500' : 'opacity-50 hover:opacity-100'} bg-blue-500`}
-                        onClick={() => setBusinessForm({...businessForm, theme_color: 'blue'})}
-                      ></div>
-                      <div
-                        className={`w-12 h-12 rounded-full cursor-pointer ring-2 ring-offset-2 ${businessForm.theme_color === 'emerald' ? 'ring-emerald-500' : 'opacity-50 hover:opacity-100'} bg-emerald-500`}
-                        onClick={() => setBusinessForm({...businessForm, theme_color: 'emerald'})}
-                      ></div>
-                      <div
-                        className={`w-12 h-12 rounded-full cursor-pointer ring-2 ring-offset-2 ${businessForm.theme_color === 'zinc' ? 'ring-zinc-800' : 'opacity-50 hover:opacity-100'} bg-zinc-800`}
-                        onClick={() => setBusinessForm({...businessForm, theme_color: 'zinc'})}
-                      ></div>
-                      <div
-                        className={`w-12 h-12 rounded-full cursor-pointer ring-2 ring-offset-2 ${businessForm.theme_color === 'purple' ? 'ring-purple-500' : 'opacity-50 hover:opacity-100'} bg-purple-500`}
-                        onClick={() => setBusinessForm({...businessForm, theme_color: 'purple'})}
-                      ></div>
+                    <div className="flex items-center gap-4">
+                       <div
+                         className={`w-12 h-12 rounded-full cursor-pointer ring-2 ring-offset-2 ${businessForm?.theme_color === 'blue' ? 'ring-blue-500' : 'opacity-50 hover:opacity-100'} bg-blue-500`}
+                         onClick={() => businessForm && setBusinessForm({...businessForm, theme_color: 'blue'})}
+                       ></div>
+                       <div
+                         className={`w-12 h-12 rounded-full cursor-pointer ring-2 ring-offset-2 ${businessForm?.theme_color === 'emerald' ? 'ring-emerald-500' : 'opacity-50 hover:opacity-100'} bg-emerald-500`}
+                         onClick={() => businessForm && setBusinessForm({...businessForm, theme_color: 'emerald'})}
+                       ></div>
+                       <div
+                         className={`w-12 h-12 rounded-full cursor-pointer ring-2 ring-offset-2 ${businessForm?.theme_color === 'zinc' ? 'ring-zinc-800' : 'opacity-50 hover:opacity-100'} bg-zinc-800`}
+                         onClick={() => businessForm && setBusinessForm({...businessForm, theme_color: 'zinc'})}
+                       ></div>
+                       <div
+                         className={`w-12 h-12 rounded-full cursor-pointer ring-2 ring-offset-2 ${businessForm?.theme_color === 'purple' ? 'ring-purple-500' : 'opacity-50 hover:opacity-100'} bg-purple-500`}
+                         onClick={() => businessForm && setBusinessForm({...businessForm, theme_color: 'purple'})}
+                       ></div>
                    </div>
                    <p className="text-sm text-gray-500 mt-4">Selected color will be applied to your public booking page, buttons, and customer emails.</p>
                 </Card>
@@ -686,6 +686,7 @@ export const OperatorDashboard: React.FC = () => {
                         if (currentBusiness) {
                           setBusinessForm({
                             name: currentBusiness.name,
+                            slug: currentBusiness.slug,
                             vertical: currentBusiness.vertical,
                             description: currentBusiness.description,
                             theme_color: currentBusiness.themeColor

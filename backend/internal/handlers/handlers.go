@@ -144,6 +144,9 @@ func (h *Handler) UpdateBusiness(c *gin.Context) {
 	if req.Name != nil {
 		updates.Name = *req.Name
 	}
+	if req.Slug != nil {
+		updates.Slug = *req.Slug
+	}
 	if req.Vertical != nil {
 		updates.Vertical = *req.Vertical
 	}
