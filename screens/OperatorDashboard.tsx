@@ -12,6 +12,10 @@ export const OperatorDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'BOOKINGS' | 'SERVICES' | 'SLOTS' | 'AVAILABILITY' | 'SETTINGS'>('DASHBOARD');
+  const [availability, setAvailability] = useState<any[]>([]);
+  const [generatingSlots, setGeneratingSlots] = useState(false);
+  const [durationMin, setDurationMin] = useState(30);
+  const [maxBookings, setMaxBookings] = useState(1);
   const [currentBusiness, setCurrentBusiness] = useState<Business | null>(null);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -72,15 +76,19 @@ export const OperatorDashboard: React.FC = () => {
         const selectedBusiness = currentBusiness || businessesData[0];
         setCurrentBusiness(selectedBusiness);
 
-        const [bookingsData, servicesData, slotsData] = await Promise.all([
+        const [bookingsData, servicesData, slotsData, availabilityData] = await Promise.all([
           api.getBookingsByBusiness(selectedBusiness.id),
           api.getServicesByBusiness(selectedBusiness.id),
-          api.getSlotsByBusiness(selectedBusiness.id)
+          api.getSlotsByBusiness(selectedBusiness.id),
+          api.getAvailability(selectedBusiness.id)
         ]);
 
         setBookings(bookingsData);
         setServices(servicesData);
         setSlots(slotsData);
+        setAvailability(availabilityData);
+        setDurationMin((selectedBusiness as any).slotDurationMin || 30);
+        setMaxBookings((selectedBusiness as any).maxBookings || 1);
       }
     } catch (err) {
       console.error('Failed to fetch data:', err);
@@ -272,6 +280,64 @@ export const OperatorDashboard: React.FC = () => {
       alert('Failed to cancel booking. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const DAYS = [
+    { value: 0, name: 'Sunday' },
+    { value: 1, name: 'Monday' },
+    { value: 2, name: 'Tuesday' },
+    { value: 3, name: 'Wednesday' },
+    { value: 4, name: 'Thursday' },
+    { value: 5, name: 'Friday' },
+    { value: 6, name: 'Saturday' },
+  ];
+
+  const getDayAvailability = (dayOfWeek: number): any => {
+    return availability.find(a => a.dayOfWeek === dayOfWeek);
+  };
+
+  const handleSaveDay = async (dayOfWeek: number, updatedData: any) => {
+    if (!currentBusiness) return;
+
+    try {
+      setSaving(true);
+      await api.setAvailability(currentBusiness.id, {
+        dayOfWeek: updatedData.dayOfWeek,
+        startTime: updatedData.startTime,
+        endTime: updatedData.endTime,
+        isClosed: updatedData.isClosed,
+      });
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to save availability:', err);
+      alert('Failed to save availability. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleGenerateSlots = async () => {
+    if (!currentBusiness) return;
+
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + 2);
+
+    try {
+      setGeneratingSlots(true);
+      const slots = await api.generateSlots(currentBusiness.id, {
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+        durationMin,
+      });
+      alert(`Generated ${slots.length} slots successfully!`);
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to generate slots:', err);
+      alert('Failed to generate slots. Make sure you have availability set for at least one day.');
+    } finally {
+      setGeneratingSlots(false);
     }
   };
 
@@ -764,17 +830,141 @@ export const OperatorDashboard: React.FC = () => {
           )}
 
           {/* AVAILABILITY TAB */}
-          {activeTab === 'AVAILABILITY' && (
-            <div className="max-w-4xl space-y-6">
-              <Card className="p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Weekly Availability</h3>
-                <p className="text-sm text-gray-500 mb-4">Set working hours for each day of the week. Closed days will not have any available slots.</p>
-                <Button onClick={() => window.location.href = '/availability'} className="w-full">
-                  Open Availability Settings
-                </Button>
-              </Card>
-            </div>
-          )}
+           {activeTab === 'AVAILABILITY' && (
+             <div className="max-w-4xl space-y-6">
+               <Card className="p-6">
+                 <h2 className="text-xl font-bold text-gray-900 mb-4">Slot Settings</h2>
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">Slot Duration (minutes)</label>
+                     <select
+                       value={durationMin}
+                       onChange={(e) => setDurationMin(parseInt(e.target.value) || 30)}
+                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                     >
+                       <option value={15}>15 min</option>
+                       <option value={30}>30 min</option>
+                       <option value={45}>45 min</option>
+                       <option value={60}>60 min</option>
+                       <option value={90}>90 min</option>
+                     </select>
+                   </div>
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">Max Bookings per Slot</label>
+                     <input
+                       type="number"
+                       min={1}
+                       value={maxBookings}
+                       onChange={(e) => setMaxBookings(parseInt(e.target.value) || 1)}
+                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                       placeholder="1"
+                     />
+                   </div>
+                   <div className="flex items-end">
+                     <Button
+                       onClick={handleGenerateSlots}
+                       disabled={generatingSlots || !currentBusiness}
+                       className="w-full"
+                     >
+                       {generatingSlots ? <Clock className="h-4 w-4 animate-spin mr-2" /> : null}
+                       Generate Slots
+                     </Button>
+                   </div>
+                 </div>
+               </Card>
+
+               <Card className="p-6">
+                 <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center justify-between">
+                   <span>Weekly Schedule</span>
+                   <span className="text-sm text-gray-500">Set working hours for each day</span>
+                 </h3>
+
+                 <div className="space-y-4">
+                   {DAYS.map((day) => {
+                     const avail = getDayAvailability(day.value);
+                     const isClosed = avail?.isClosed || false;
+
+                     return (
+                       <div key={day.value} className="border border-gray-200 rounded-lg p-4">
+                         <div className="flex items-center justify-between mb-3">
+                           <div className="flex items-center gap-2">
+                             <CalendarIcon className="h-5 w-5 text-gray-400" />
+                             <span className="font-semibold text-gray-900">{day.name}</span>
+                           </div>
+                           <label className="flex items-center gap-2 cursor-pointer">
+                             <input
+                               type="checkbox"
+                               checked={isClosed}
+                               onChange={(e) => {
+                                 handleSaveDay(day.value, {
+                                   dayOfWeek: day.value,
+                                   isClosed: e.target.checked,
+                                 });
+                               }}
+                               className="w-4 h-4 text-gray-600 rounded"
+                             />
+                             <span className="text-sm text-gray-600">Closed</span>
+                           </label>
+                         </div>
+
+                         {!isClosed && (
+                           <div className="grid grid-cols-2 gap-4">
+                             <div>
+                               <label className="block text-sm text-gray-600 mb-1">Start Time</label>
+                               <input
+                                 type="time"
+                                 value={avail?.startTime || ''}
+                                 onChange={(e) => {
+                                   handleSaveDay(day.value, {
+                                     dayOfWeek: day.value,
+                                     startTime: e.target.value || '',
+                                     endTime: avail?.endTime || '',
+                                     isClosed: false,
+                                   });
+                                 }}
+                                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                 step="900"
+                               />
+                             </div>
+                             <div>
+                               <label className="block text-sm text-gray-600 mb-1">End Time</label>
+                               <input
+                                 type="time"
+                                 value={avail?.endTime || ''}
+                                 onChange={(e) => {
+                                   handleSaveDay(day.value, {
+                                     dayOfWeek: day.value,
+                                     startTime: avail?.startTime || '',
+                                     endTime: e.target.value || '',
+                                     isClosed: false,
+                                   });
+                                 }}
+                                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                 step="900"
+                               />
+                             </div>
+                           </div>
+                         )}
+
+                         {!isClosed && avail?.startTime && avail?.endTime && (
+                           <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-100">
+                             <Button
+                               onClick={() => handleSaveDay(day.value, getDayAvailability(day.value))}
+                               disabled={saving}
+                               variant="outline"
+                               className="gap-2"
+                             >
+                               Save
+                             </Button>
+                           </div>
+                         )}
+                       </div>
+                     );
+                   })}
+                 </div>
+               </Card>
+             </div>
+           )}
 
           {/* SETTINGS TAB */}
         {activeTab === 'SETTINGS' && (
