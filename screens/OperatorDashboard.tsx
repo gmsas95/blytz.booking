@@ -550,17 +550,14 @@ export const OperatorDashboard: React.FC = () => {
                              <p className="text-sm text-gray-500">Required Deposit</p>
                              <p className="font-bold text-primary-600">{fmtMoney(service.depositAmount)}</p>
                           </div>
-                          <div className="flex items-center gap-1">
-                             <Button variant="ghost" className="p-2 text-gray-400 hover:text-blue-600">
-                                <Edit2 className="h-4 w-4" />
-                             </Button>
-                             <Button variant="ghost" className="p-2 text-gray-400 hover:text-red-600" onClick={() => handleDeleteService(service.id)} disabled={saving}>
-                                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                             </Button>
-                            <Button variant="ghost" className="p-2 text-gray-400 hover:text-red-600">
-                               <Trash2 className="h-4 w-4" />
-                            </Button>
-                         </div>
+                           <div className="flex items-center gap-1">
+                              <Button variant="ghost" className="p-2 text-gray-400 hover:text-blue-600">
+                                 <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" className="p-2 text-gray-400 hover:text-red-600" onClick={() => handleDeleteService(service.id)} disabled={saving}>
+                                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                              </Button>
+                          </div>
                       </div>
                    </Card>
                 ))
