@@ -559,6 +559,46 @@ func (h *Handler) ListBookings(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func (h *Handler) CancelBooking(c *gin.Context) {
+	businessID := c.Param("businessId")
+	bookingID := c.Param("bookingId")
+
+	businessUUID, err := uuid.Parse(businessID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
+		return
+	}
+
+	bookingUUID, err := uuid.Parse(bookingID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid booking ID"})
+		return
+	}
+
+	// Verify booking belongs to business
+	booking, err := h.BookingService.GetByID(bookingUUID)
+	if err != nil {
+		if err == services.ErrNotFound {
+			c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "Booking not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch booking"})
+		return
+	}
+
+	if booking.BusinessID != businessUUID {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "Booking does not belong to this business"})
+		return
+	}
+
+	if err := h.BookingService.Cancel(bookingUUID); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to cancel booking"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Booking cancelled successfully"})
+}
+
 // Auth Handlers
 
 func (h *Handler) Register(c *gin.Context) {

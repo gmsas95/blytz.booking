@@ -132,6 +132,7 @@ func main() {
 		// Bookings
 		v1.POST("/bookings", handler.CreateBooking)
 		v1.GET("/businesses/:businessId/bookings", handler.ListBookings)
+		v1.DELETE("/businesses/:businessId/bookings/:bookingId", handler.CancelBooking)
 	}
 
 	// Start server

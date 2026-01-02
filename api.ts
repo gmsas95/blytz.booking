@@ -243,6 +243,12 @@ class ApiClient {
     return this.request<Booking[]>(`/api/v1/businesses/${businessId}/bookings`);
   }
 
+  async cancelBooking(businessId: string, bookingId: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/v1/businesses/${businessId}/bookings/${bookingId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Health check
   async healthCheck(): Promise<{ status: string }> {
     return this.request<{ status: string }>('/health');

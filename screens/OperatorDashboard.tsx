@@ -257,6 +257,24 @@ export const OperatorDashboard: React.FC = () => {
     }
   };
 
+  const handleCancelBooking = async (bookingId: string) => {
+    if (!currentBusiness) return;
+
+    if (!confirm('Are you sure you want to cancel this booking? This will refund the deposit and make the slot available again.')) return;
+
+    try {
+      setSaving(true);
+      await api.cancelBooking(currentBusiness.id, bookingId);
+      await fetchData();
+      alert('Booking cancelled successfully!');
+    } catch (err) {
+      console.error('Failed to cancel booking:', err);
+      alert('Failed to cancel booking. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const myBookings = bookings;
   const myServices = services;
   const mySlots = slots;
@@ -520,18 +538,21 @@ export const OperatorDashboard: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-3">
-                      <div className="text-right mr-4 hidden sm:block">
-                        <p className="text-sm font-medium text-gray-900">Paid: {fmtMoney(booking.depositPaid)}</p>
-                        <p className="text-xs text-gray-500">Total: {fmtMoney(booking.totalPrice)}</p>
-                      </div>
-                      <Button variant="outline" className="text-xs py-2 h-9">
-                        Details
-                      </Button>
-                      <Button variant="ghost" className="text-gray-400 hover:text-gray-900 p-2">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
+                     <div className="flex items-center gap-3">
+                       <div className="text-right mr-4 hidden sm:block">
+                         <p className="text-sm font-medium text-gray-900">Paid: {fmtMoney(booking.depositPaid)}</p>
+                         <p className="text-xs text-gray-500">Total: {fmtMoney(booking.totalPrice)}</p>
+                       </div>
+                       {booking.status !== BookingStatus.CANCELLED && (
+                         <Button variant="outline" className="text-xs py-2 h-9" onClick={() => handleCancelBooking(booking.id)} disabled={saving}>
+                           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                           Cancel Booking
+                         </Button>
+                       )}
+                       <Button variant="ghost" className="text-gray-400 hover:text-gray-900 p-2">
+                         <Download className="h-4 w-4" />
+                       </Button>
+                     </div>
                   </Card>
                 ))
             )}
