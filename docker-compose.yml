@@ -28,14 +28,14 @@ services:
       timeout: 5s
       retries: 5
 
-   # Go Backend API
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    expose:
-      - "3001"
+    # Go Backend API
+   backend:
+     build:
+       context: ./backend
+       dockerfile: Dockerfile
+     restart: unless-stopped
+     ports:
+       - "8080:3001"
     environment:
       SERVER_PORT: 3001
       ENV: production

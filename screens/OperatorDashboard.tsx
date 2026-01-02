@@ -1,27 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Calendar, LayoutDashboard, Settings, Plus, Trash2, Download, TrendingUp, DollarSign, Users, ChevronDown, Briefcase, Edit2, CreditCard, Bell, ShieldCheck } from 'lucide-react';
-import { MOCK_BOOKINGS, MOCK_SERVICES, MOCK_BUSINESSES } from '../constants';
-import { BookingStatus, Business } from '../types';
+import { LogOut, Calendar, LayoutDashboard, Settings, Plus, Trash2, Download, TrendingUp, DollarSign, Users, ChevronDown, Briefcase, Edit2, CreditCard, Bell, ShieldCheck, Loader2 } from 'lucide-react';
+import { BookingStatus, Business, Service, Booking } from '../types';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../api';
 
 export const OperatorDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'BOOKINGS' | 'SERVICES' | 'SETTINGS'>('DASHBOARD');
-  // Mock business selection (Simulating DetailPro logged in)
-  const [currentBusiness, setCurrentBusiness] = useState<Business>(MOCK_BUSINESSES[0]);
+  const [currentBusiness, setCurrentBusiness] = useState<Business | null>(null);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Format helpers
+  useEffect(() => {
+    fetchData();
+  }, [currentBusiness]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const businessesData = await api.getBusinesses();
+      setBusinesses(businessesData);
+      
+      if (businessesData.length > 0) {
+        const selectedBusiness = currentBusiness || businessesData[0];
+        setCurrentBusiness(selectedBusiness);
+        
+        const [bookingsData, servicesData] = await Promise.all([
+          api.getBookingsByBusiness(selectedBusiness.id),
+          api.getServicesByBusiness(selectedBusiness.id)
+        ]);
+        
+        setBookings(bookingsData);
+        setServices(servicesData);
+      }
+    } catch (err) {
+      console.error('Failed to fetch data:', err);
+      setError('Failed to load data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBusinessChange = async (business: Business) => {
+    setCurrentBusiness(business);
+  };
+
   const fmtDate = (iso: string) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
   const fmtMoney = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
-  // Filter Data
-  const myBookings = MOCK_BOOKINGS.filter(b => b.businessId === currentBusiness.id);
-  const myServices = MOCK_SERVICES.filter(s => s.businessId === currentBusiness.id);
+  const myBookings = bookings;
+  const myServices = services;
   const totalRev = myBookings.reduce((acc, curr) => acc + curr.depositPaid, 0);
 
   const NavItem = ({ id, label, icon: Icon }: any) => (
@@ -38,6 +76,40 @@ export const OperatorDashboard: React.FC = () => {
     </button>
   );
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={fetchData}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (businesses.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Businesses Found</h2>
+          <p className="text-gray-500 mb-6">You don't have any businesses set up yet. Create one to get started.</p>
+          <Button>Create Your First Business</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white flex flex-col md:flex-row font-sans text-gray-900">
       {/* Sidebar */}
@@ -52,15 +124,18 @@ export const OperatorDashboard: React.FC = () => {
         <div className="px-4 py-6 space-y-1 flex-1">
           <div className="mb-6 px-4">
              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Organization</p>
-             <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 border border-gray-200">
-                <div className="h-6 w-6 rounded bg-gray-800 text-white flex items-center justify-center text-xs">
-                    {currentBusiness.name[0]}
-                </div>
-                <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{currentBusiness.name}</p>
-                </div>
-                <ChevronDown className="h-4 w-4 text-gray-400" />
-             </div>
+             <select
+               value={currentBusiness?.id || ''}
+               onChange={(e) => {
+                 const business = businesses.find(b => b.id === e.target.value);
+                 if (business) handleBusinessChange(business);
+               }}
+               className="w-full flex items-center gap-2 p-2 rounded-lg bg-gray-50 border border-gray-200 text-sm"
+             >
+                {businesses.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+             </select>
           </div>
 
           <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6">Main Menu</p>
