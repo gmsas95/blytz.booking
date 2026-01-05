@@ -143,6 +143,13 @@ func (h *Handler) CreateBusiness(c *gin.Context) {
 		MaxBookings:     req.MaxBookings,
 	}
 
+	if req.SlotDurationMin == 0 {
+		business.SlotDurationMin = 30
+	}
+	if req.MaxBookings == 0 {
+		business.MaxBookings = 1
+	}
+
 	if err := h.BusinessService.Create(business); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to create business"})
 		return

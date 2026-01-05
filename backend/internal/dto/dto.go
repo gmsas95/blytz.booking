@@ -55,8 +55,8 @@ type CreateBusinessRequest struct {
 	Vertical        string `json:"vertical" binding:"required"`
 	Description     string `json:"description"`
 	ThemeColor      string `json:"themeColor"`
-	SlotDurationMin int    `json:"slotDurationMin" binding:"required,min=15"`
-	MaxBookings     int    `json:"maxBookings" binding:"required,min=1"`
+	SlotDurationMin int    `json:"slotDurationMin" binding:"omitempty,min=15"`
+	MaxBookings     int    `json:"maxBookings" binding:"omitempty,min=1"`
 }
 
 type UpdateBusinessRequest struct {
