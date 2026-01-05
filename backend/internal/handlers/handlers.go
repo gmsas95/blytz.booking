@@ -47,15 +47,23 @@ func (h *Handler) HealthCheck(c *gin.Context) {
 // Business Handlers
 func (h *Handler) ListBusinesses(c *gin.Context) {
 	userIDStr := c.GetString("user_id")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
-		return
-	}
-	businesses, err := h.BusinessService.GetByUser(userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch businesses"})
-		return
+
+	var businesses []models.Business
+	var err error
+
+	if userIDStr != "" {
+		userID, parseErr := uuid.Parse(userIDStr)
+		if parseErr != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+			return
+		}
+		businesses, err = h.BusinessService.GetByUser(userID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch businesses"})
+			return
+		}
+	} else {
+		businesses = []models.Business{}
 	}
 
 	response := make([]dto.BusinessResponse, len(businesses))

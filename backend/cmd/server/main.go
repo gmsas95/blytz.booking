@@ -136,8 +136,8 @@ func main() {
 			})
 		})
 
-		// Businesses (protected)
-		v1.GET("/businesses", auth.AuthMiddleware(), handler.ListBusinesses)
+		// Businesses (public for GET, protected for mutations)
+		v1.GET("/businesses", handler.ListBusinesses)
 		v1.POST("/businesses", auth.AuthMiddleware(), handler.CreateBusiness)
 		v1.GET("/businesses/:businessId", auth.AuthMiddleware(), handler.GetBusiness)
 		v1.PUT("/businesses/:businessId", auth.AuthMiddleware(), handler.UpdateBusiness)

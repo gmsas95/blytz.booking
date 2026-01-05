@@ -18,7 +18,7 @@ const (
 
 type Business struct {
 	ID              uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
-	OwnerID         uuid.UUID `json:"-" gorm:"type:uuid;not null;index;unique"`
+	OwnerID         uuid.UUID `json:"-" gorm:"type:uuid;index;unique"`
 	Name            string    `json:"name" gorm:"not null"`
 	Slug            string    `json:"slug" gorm:"uniqueIndex;not null"`
 	Vertical        string    `json:"vertical" gorm:"not null"`
