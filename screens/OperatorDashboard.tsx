@@ -146,16 +146,18 @@ export const OperatorDashboard: React.FC = () => {
   };
 
   const handleCreateBusiness = async () => {
-    if (!businessForm.name || !businessForm.slug) {
+    if (!businessForm.name) {
       alert('Please fill in all required fields');
       return;
     }
+
+    const autoSlug = businessForm.slug || businessForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
     try {
       setSaving(true);
       await api.createBusiness({
         name: businessForm.name,
-        slug: businessForm.slug,
+        slug: autoSlug,
         vertical: businessForm.vertical || 'General',
         description: businessForm.description,
         theme_color: businessForm.theme_color
