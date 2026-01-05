@@ -189,6 +189,8 @@ class ApiClient {
     vertical: string;
     description?: string;
     theme_color?: string;
+    slotDurationMin?: number;
+    maxBookings?: number;
   }): Promise<Business> {
     return this.request<Business>('/api/v1/businesses', {
       method: 'POST',
