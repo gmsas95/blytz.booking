@@ -59,18 +59,36 @@ func (m *SubdomainMiddleware) ExtractAndValidate() gin.HandlerFunc {
 }
 
 func (m *SubdomainMiddleware) extractSubdomain(host string) string {
-	host = strings.TrimSuffix(host, m.config.BaseDomain)
-	host = strings.Trim(host, ".")
-
 	if strings.Contains(host, ":") {
 		host = strings.Split(host, ":")[0]
 	}
+
+	host = strings.TrimSpace(host)
+
+	baseDomain := m.config.BaseDomain
+
+	if !strings.HasSuffix(host, baseDomain) {
+		return ""
+	}
+
+	host = strings.TrimSuffix(host, baseDomain)
+	host = strings.Trim(host, ".")
 
 	if host == "" || strings.Contains(host, ".") {
 		return ""
 	}
 
-	if host == "www" || host == "localhost" || host == "127-0-0-1" || host == "127-0-0-1-ip" {
+	ignoredSubdomains := map[string]bool{
+		"www":          true,
+		"api":          true,
+		"admin":        true,
+		"app":          true,
+		"localhost":    true,
+		"127-0-0-1":    true,
+		"127-0-0-1-ip": true,
+	}
+
+	if ignoredSubdomains[host] {
 		return ""
 	}
 

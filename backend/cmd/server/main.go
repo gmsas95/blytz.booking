@@ -63,9 +63,21 @@ func main() {
 
 	// CORS middleware
 	r.Use(func(c *gin.Context) {
+		if c.Request.Method == "OPTIONS" {
+			origin := c.Request.Header.Get("Origin")
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+			c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+			c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+			c.Writer.Header().Set("Access-Control-Max-Age", "86400")
+			c.AbortWithStatus(204)
+			return
+		}
+
 		origin := c.Request.Header.Get("Origin")
 		allowedOrigins := []string{
 			"https://blytz.cloud",
+			"https://*.blytz.cloud",
 			"http://localhost:3000",
 			"http://localhost:8080",
 		}
@@ -84,11 +96,6 @@ func main() {
 			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 			c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 			c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
-		}
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
 		}
 
 		c.Next()
