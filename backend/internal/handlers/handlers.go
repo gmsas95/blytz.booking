@@ -133,12 +133,14 @@ func (h *Handler) CreateBusiness(c *gin.Context) {
 	}
 
 	business := &models.Business{
-		ID:          uuid.New(),
-		Name:        req.Name,
-		Slug:        req.Slug,
-		Vertical:    req.Vertical,
-		Description: req.Description,
-		ThemeColor:  req.ThemeColor,
+		ID:              uuid.New(),
+		Name:            req.Name,
+		Slug:            req.Slug,
+		Vertical:        req.Vertical,
+		Description:     req.Description,
+		ThemeColor:      req.ThemeColor,
+		SlotDurationMin: req.SlotDurationMin,
+		MaxBookings:     req.MaxBookings,
 	}
 
 	if err := h.BusinessService.Create(business); err != nil {
@@ -147,14 +149,16 @@ func (h *Handler) CreateBusiness(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, dto.BusinessResponse{
-		ID:          business.ID.String(),
-		Name:        business.Name,
-		Slug:        business.Slug,
-		Vertical:    business.Vertical,
-		Description: business.Description,
-		ThemeColor:  business.ThemeColor,
-		CreatedAt:   business.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:   business.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		ID:              business.ID.String(),
+		Name:            business.Name,
+		Slug:            business.Slug,
+		Vertical:        business.Vertical,
+		Description:     business.Description,
+		ThemeColor:      business.ThemeColor,
+		SlotDurationMin: business.SlotDurationMin,
+		MaxBookings:     business.MaxBookings,
+		CreatedAt:       business.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:       business.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	})
 }
 
