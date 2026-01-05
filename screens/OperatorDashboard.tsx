@@ -78,37 +78,49 @@ export const OperatorDashboard: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('Fetching businesses data...');
 
       const businessesData = await api.getBusinesses();
+      console.log('Businesses fetched:', businessesData);
       setBusinesses(businessesData);
 
-        if (businessesData.length > 0) {
-          const selectedBusiness = currentBusiness || businessesData[0];
-          setCurrentBusiness(selectedBusiness);
+      console.log('Businesses count:', businessesData.length, 'Current business:', currentBusiness);
 
-          const [bookingsData, servicesData, slotsData, availabilityData] = await Promise.all([
-            api.getBookingsByBusiness(selectedBusiness.id),
-            api.getServicesByBusiness(selectedBusiness.id),
-            api.getSlotsByBusiness(selectedBusiness.id),
-            api.getAvailability(selectedBusiness.id)
-          ]);
+      if (businessesData.length > 0) {
+        const selectedBusiness = currentBusiness || businessesData[0];
+        console.log('Selected business:', selectedBusiness);
+        setCurrentBusiness(selectedBusiness);
 
-          setBookings(bookingsData);
-          setServices(servicesData);
-          setSlots(slotsData);
-          setAvailability(availabilityData);
-          setDurationMin((selectedBusiness as any).slotDurationMin || 30);
-          setMaxBookings((selectedBusiness as any).maxBookings || 1);
-          setEditingDay({});
+        console.log('Fetching data for business:', selectedBusiness.id);
+        const [bookingsData, servicesData, slotsData, availabilityData] = await Promise.all([
+          api.getBookingsByBusiness(selectedBusiness.id),
+          api.getServicesByBusiness(selectedBusiness.id),
+          api.getSlotsByBusiness(selectedBusiness.id),
+          api.getAvailability(selectedBusiness.id)
+        ]);
 
-          setBusinessForm({
-            name: selectedBusiness.name,
-            slug: selectedBusiness.slug,
-            vertical: selectedBusiness.vertical,
-            description: selectedBusiness.description,
-            theme_color: selectedBusiness.themeColor
-          });
-        }
+        console.log('Data fetched:', {bookings: bookingsData.length, services: servicesData.length, slots: slotsData.length, availability: availabilityData.length});
+
+        setBookings(bookingsData);
+        setServices(servicesData);
+        setSlots(slotsData);
+        setAvailability(availabilityData);
+        setDurationMin((selectedBusiness as any).slotDurationMin || 30);
+        setMaxBookings((selectedBusiness as any).maxBookings || 1);
+        setEditingDay({});
+
+        setBusinessForm({
+          name: selectedBusiness.name,
+          slug: selectedBusiness.slug,
+          vertical: selectedBusiness.vertical,
+          description: selectedBusiness.description,
+          theme_color: selectedBusiness.themeColor
+        });
+
+        console.log('All state updated, dashboard should render');
+      } else {
+        console.log('No businesses found, showing create form');
+      }
     } catch (err) {
       console.error('Failed to fetch data:', err);
       setError('Failed to load data. Please try again.');
