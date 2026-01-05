@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Check, Lock, Clock } from 'lucide-react';
 import { api, Service, Slot, CustomerDetails, Business } from '../api';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
+import { getSubdomain, getBaseDomain } from '../utils/subdomain';
 
 type Step = 'SERVICE' | 'SLOT' | 'DETAILS' | 'PAYMENT';
 
 export const PublicBooking: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [business, setBusiness] = useState<Business | null>(null);
   const [loadingBusiness, setLoadingBusiness] = useState(true);
@@ -24,29 +24,26 @@ export const PublicBooking: React.FC = () => {
   const [loadingServices, setLoadingServices] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(true);
 
-  // Fetch business by slug
+  // Fetch business by subdomain
   useEffect(() => {
     const fetchBusiness = async () => {
-      if (!slug) return;
-
       try {
-        // Try to find business by slug from businesses list
-        const businesses = await api.getBusinesses();
-        const found = businesses.find(b => b.slug === slug);
-        if (found) {
-          setBusiness(found as Business);
+        const business = await api.getBusinessBySubdomain();
+        if (business) {
+          setBusiness(business);
         } else {
-          console.error('Business not found');
+          window.location.href = `https://${getBaseDomain()}`;
         }
       } catch (err) {
         console.error('Failed to fetch business:', err);
+        window.location.href = `https://${getBaseDomain()}`;
       } finally {
         setLoadingBusiness(false);
       }
     };
 
     fetchBusiness();
-  }, [slug]);
+  }, []);
 
   // Fetch services and slots when business changes
   useEffect(() => {

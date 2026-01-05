@@ -174,6 +174,15 @@ class ApiClient {
     return this.request<Business>(`/api/v1/businesses/${id}`);
   }
 
+  async getBusinessBySubdomain(): Promise<Business | null> {
+    const slug = (window as any).location.hostname.split('.')[0];
+    try {
+      return await this.request<Business>(`/api/v1/business/by-subdomain?slug=${slug}`);
+    } catch {
+      return null;
+    }
+  }
+
   async createBusiness(data: {
     name: string;
     slug: string;
@@ -259,7 +268,12 @@ class ApiClient {
   }
 
   // Bookings
-  async createBooking(booking: Omit<Booking, 'id' | 'status' | 'createdAt' | 'updatedAt'>): Promise<Booking> {
+  async createBooking(booking: {
+    businessId: string;
+    serviceId: string;
+    slotId: string;
+    customer: CustomerDetails;
+  }): Promise<Booking> {
     return this.request<Booking>('/api/v1/bookings', {
       method: 'POST',
       body: JSON.stringify(booking),

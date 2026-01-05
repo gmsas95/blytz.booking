@@ -39,12 +39,15 @@ services:
     environment:
       SERVER_PORT: 3001
       ENV: production
+      BASE_DOMAIN: ${BASE_DOMAIN:-blytz.cloud}
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_NAME: ${DB_NAME:-blytz}
       DB_SSLMODE: disable
+      DB_MAX_OPEN_CONNS: ${DB_MAX_OPEN_CONNS:-30}
+      DB_MAX_IDLE_CONNS: ${DB_MAX_IDLE_CONNS:-5}
       REDIS_HOST: redis:6379
       REDIS_PASSWORD: ""
       REDIS_DB: 0
@@ -64,7 +67,8 @@ services:
     expose:
       - "3000"
     environment:
-      VITE_API_URL: http://api.blytz.cloud
+      VITE_API_URL: ${VITE_API_URL:-https://api.blytz.cloud}
+      VITE_BASE_DOMAIN: ${BASE_DOMAIN:-blytz.cloud}
     depends_on:
       - backend
     healthcheck:

@@ -18,43 +18,6 @@ func NewBookingService(db *gorm.DB) *BookingService {
 }
 
 func (s *BookingService) Create(booking *models.Booking) error {
-	// Get business to check capacity limits
-	var business models.Business
-	if err := s.DB.Where("id = ?", booking.BusinessID).First(&business).Error; err != nil {
-		return err
-	}
-
-	// Check if slot exists
-	var slot models.Slot
-	if err := s.DB.Where("id = ?", booking.SlotID).First(&slot).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return ErrBadRequest
-		}
-		return err
-	}
-
-	// Check capacity: count existing bookings for this time slot
-	bookingCount := slot.BookingCount
-	if bookingCount >= business.MaxBookings {
-		return ErrBadRequest // Slot is full
-	}
-
-	// Check if service exists
-	var service models.Service
-	if err := s.DB.Where("id = ?", booking.ServiceID).First(&service).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return ErrBadRequest
-		}
-		return err
-	}
-
-	// Set booking details from service and slot
-	booking.ServiceName = service.Name
-	booking.SlotTime = slot.StartTime
-	booking.DepositPaid = service.DepositAmount
-	booking.TotalPrice = service.TotalPrice
-
-	// Start transaction
 	tx := s.DB.Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -62,24 +25,59 @@ func (s *BookingService) Create(booking *models.Booking) error {
 		}
 	}()
 
-	// Create booking
+	var slot models.Slot
+	if err := tx.Set("gorm:query_option", "FOR UPDATE").
+		Where("id = ?", booking.SlotID).First(&slot).Error; err != nil {
+		tx.Rollback()
+		if err == gorm.ErrRecordNotFound {
+			return ErrBadRequest
+		}
+		return err
+	}
+
+	var business models.Business
+	if err := tx.Where("id = ?", booking.BusinessID).First(&business).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if slot.BookingCount >= business.MaxBookings {
+		tx.Rollback()
+		return ErrSlotFull
+	}
+
+	var service models.Service
+	if err := tx.Where("id = ?", booking.ServiceID).First(&service).Error; err != nil {
+		tx.Rollback()
+		if err == gorm.ErrRecordNotFound {
+			return ErrBadRequest
+		}
+		return err
+	}
+
+	booking.ServiceName = service.Name
+	booking.SlotTime = slot.StartTime
+	booking.DepositPaid = service.DepositAmount
+	booking.TotalPrice = service.TotalPrice
+
 	if err := tx.Create(booking).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	// Increment slot booking count
-	if err := tx.Model(&models.Slot{}).Where("id = ?", booking.SlotID).Update("booking_count", bookingCount+1).Error; err != nil {
+	result := tx.Model(&models.Slot{}).
+		Where("id = ? AND booking_count < ?", booking.SlotID, business.MaxBookings).
+		Update("booking_count", gorm.Expr("booking_count + 1"))
+
+	if result.RowsAffected == 0 {
 		tx.Rollback()
-		return err
+		return ErrSlotFull
 	}
 
-	// Mark slot as booked if at capacity
-	if bookingCount+1 >= business.MaxBookings {
-		if err := tx.Model(&models.Slot{}).Where("id = ?", booking.SlotID).Update("is_booked", true).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
+	if slot.BookingCount+1 >= business.MaxBookings {
+		tx.Model(&models.Slot{}).
+			Where("id = ?", booking.SlotID).
+			Update("is_booked", true)
 	}
 
 	return tx.Commit().Error

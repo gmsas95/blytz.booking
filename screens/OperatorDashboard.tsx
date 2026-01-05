@@ -7,10 +7,19 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api';
+import { getSubdomain, getBaseDomain } from '../utils/subdomain';
 
 export const OperatorDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const slug = getSubdomain();
+
+  useEffect(() => {
+    if (slug) {
+      window.location.href = `https://${getBaseDomain()}/dashboard`;
+    }
+  }, [slug]);
+
   const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'BOOKINGS' | 'SERVICES' | 'SLOTS' | 'AVAILABILITY' | 'SETTINGS'>('DASHBOARD');
   const [availability, setAvailability] = useState<any[]>([]);
   const [generatingSlots, setGeneratingSlots] = useState(false);

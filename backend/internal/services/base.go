@@ -12,6 +12,7 @@ var (
 	ErrBadRequest   = errors.New("invalid request")
 	ErrUnauthorized = errors.New("unauthorized")
 	ErrForbidden    = errors.New("forbidden")
+	ErrSlotFull     = errors.New("slot is full")
 )
 
 type BaseService struct {

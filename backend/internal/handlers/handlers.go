@@ -501,6 +501,10 @@ func (h *Handler) CreateBooking(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid booking request"})
 			return
 		}
+		if err == services.ErrSlotFull {
+			c.JSON(http.StatusConflict, dto.ErrorResponse{Error: "Slot is fully booked"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to create booking"})
 		return
 	}

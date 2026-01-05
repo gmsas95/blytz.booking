@@ -3,12 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, ArrowRight, Zap, Globe, LayoutGrid, CheckCircle2, TrendingUp } from 'lucide-react';
 import { api, Business } from '../api';
 import { MOCK_BUSINESSES } from '../constants';
+import { getSubdomain, getBaseDomain } from '../utils/subdomain';
 
 export const SaaSLanding: React.FC = () => {
   const navigate = useNavigate();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const slug = getSubdomain();
+
+  useEffect(() => {
+    if (slug) {
+      window.location.href = '/';
+    }
+  }, [slug]);
 
   useEffect(() => {
     const fetchBusinesses = async () => {

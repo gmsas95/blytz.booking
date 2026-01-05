@@ -14,8 +14,9 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port string
-	Env  string
+	Port       string
+	Env        string
+	BaseDomain string
 }
 
 type DatabaseConfig struct {
@@ -48,8 +49,9 @@ type EmailConfig struct {
 func LoadConfig() *Config {
 	return &Config{
 		Server: ServerConfig{
-			Port: getEnv("SERVER_PORT", "8080"),
-			Env:  getEnv("ENV", "development"),
+			Port:       getEnv("SERVER_PORT", "8080"),
+			Env:        getEnv("ENV", "development"),
+			BaseDomain: getEnv("BASE_DOMAIN", "blytz.cloud"),
 		},
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "localhost"),

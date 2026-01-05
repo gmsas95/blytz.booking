@@ -4,6 +4,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { useAuth } from '../context/AuthContext';
 import { api, Business, BusinessAvailability } from '../api';
+import { getSubdomain, getBaseDomain } from '../utils/subdomain';
 
 const DAYS = [
   { value: 0, name: 'Sunday' },
@@ -24,6 +25,14 @@ interface DayAvailability {
 
 export const Availability: React.FC = () => {
   const { logout } = useAuth();
+  const slug = getSubdomain();
+
+  useEffect(() => {
+    if (slug) {
+      window.location.href = `https://${getBaseDomain()}/availability`;
+    }
+  }, [slug]);
+
   const [currentBusiness, setCurrentBusiness] = useState<Business | null>(null);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [availability, setAvailability] = useState<BusinessAvailability[]>([]);

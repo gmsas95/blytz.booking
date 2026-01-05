@@ -6,9 +6,12 @@ import (
 
 	"blytz.cloud/backend/config"
 	"blytz.cloud/backend/internal/auth"
+	"blytz.cloud/backend/internal/dto"
 	"blytz.cloud/backend/internal/email"
 	"blytz.cloud/backend/internal/handlers"
+	"blytz.cloud/backend/internal/middleware"
 	"blytz.cloud/backend/internal/repository"
+	"blytz.cloud/backend/internal/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -47,8 +50,16 @@ func main() {
 		Password: cfg.Email.Password,
 	})
 
+	businessService := services.NewBusinessService(repo.DB)
+	subdomainMiddleware := middleware.NewSubdomainMiddleware(businessService, &middleware.SubdomainConfig{
+		BaseDomain: cfg.Server.BaseDomain,
+	})
+
 	// Setup Gin router
 	r := gin.Default()
+
+	// Subdomain middleware (extracts business from subdomain)
+	r.Use(subdomainMiddleware.ExtractAndValidate())
 
 	// CORS middleware
 	r.Use(func(c *gin.Context) {
@@ -123,6 +134,33 @@ func main() {
 		v1.POST("/businesses", handler.CreateBusiness)
 		v1.GET("/businesses/:businessId", handler.GetBusiness)
 		v1.PUT("/businesses/:businessId", handler.UpdateBusiness)
+		v1.GET("/business/by-subdomain", func(c *gin.Context) {
+			slug := c.Query("slug")
+			if slug == "" {
+				slug = c.GetString("subdomain")
+			}
+			business, err := businessService.GetBySlug(slug)
+			if err != nil {
+				if err == services.ErrNotFound {
+					c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "Business not found"})
+					return
+				}
+				c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch business"})
+				return
+			}
+			c.JSON(http.StatusOK, dto.BusinessResponse{
+				ID:              business.ID.String(),
+				Name:            business.Name,
+				Slug:            business.Slug,
+				Vertical:        business.Vertical,
+				Description:     business.Description,
+				ThemeColor:      business.ThemeColor,
+				SlotDurationMin: business.SlotDurationMin,
+				MaxBookings:     business.MaxBookings,
+				CreatedAt:       business.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+				UpdatedAt:       business.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			})
+		})
 
 		// Services
 		v1.GET("/businesses/:businessId/services", handler.GetServicesByBusiness)
