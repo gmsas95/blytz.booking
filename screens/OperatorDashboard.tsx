@@ -74,6 +74,18 @@ export const OperatorDashboard: React.FC = () => {
     }
   }, [currentBusiness]);
 
+  useEffect(() => {
+    if (currentBusiness) {
+      setBusinessForm({
+        name: currentBusiness.name,
+        slug: currentBusiness.slug,
+        vertical: currentBusiness.vertical,
+        description: currentBusiness.description,
+        theme_color: currentBusiness.themeColor
+      });
+    }
+  }, [currentBusiness]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -82,25 +94,33 @@ export const OperatorDashboard: React.FC = () => {
       const businessesData = await api.getBusinesses();
       setBusinesses(businessesData);
 
-      if (businessesData.length > 0) {
-        const selectedBusiness = currentBusiness || businessesData[0];
-        setCurrentBusiness(selectedBusiness);
+        if (businessesData.length > 0) {
+          const selectedBusiness = currentBusiness || businessesData[0];
+          setCurrentBusiness(selectedBusiness);
 
-        const [bookingsData, servicesData, slotsData, availabilityData] = await Promise.all([
-          api.getBookingsByBusiness(selectedBusiness.id),
-          api.getServicesByBusiness(selectedBusiness.id),
-          api.getSlotsByBusiness(selectedBusiness.id),
-          api.getAvailability(selectedBusiness.id)
-        ]);
+          const [bookingsData, servicesData, slotsData, availabilityData] = await Promise.all([
+            api.getBookingsByBusiness(selectedBusiness.id),
+            api.getServicesByBusiness(selectedBusiness.id),
+            api.getSlotsByBusiness(selectedBusiness.id),
+            api.getAvailability(selectedBusiness.id)
+          ]);
 
-        setBookings(bookingsData);
-        setServices(servicesData);
-        setSlots(slotsData);
-        setAvailability(availabilityData);
-        setDurationMin((selectedBusiness as any).slotDurationMin || 30);
-        setMaxBookings((selectedBusiness as any).maxBookings || 1);
-        setEditingDay({});
-      }
+          setBookings(bookingsData);
+          setServices(servicesData);
+          setSlots(slotsData);
+          setAvailability(availabilityData);
+          setDurationMin((selectedBusiness as any).slotDurationMin || 30);
+          setMaxBookings((selectedBusiness as any).maxBookings || 1);
+          setEditingDay({});
+
+          setBusinessForm({
+            name: selectedBusiness.name,
+            slug: selectedBusiness.slug,
+            vertical: selectedBusiness.vertical,
+            description: selectedBusiness.description,
+            theme_color: selectedBusiness.themeColor
+          });
+        }
     } catch (err) {
       console.error('Failed to fetch data:', err);
       setError('Failed to load data. Please try again.');
