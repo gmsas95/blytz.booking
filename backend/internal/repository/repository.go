@@ -60,6 +60,7 @@ func (r *Repository) AutoMigrate() error {
 		&models.Slot{},
 		&models.Booking{},
 		&models.User{},
+		&models.Employee{},
 	)
 }
 

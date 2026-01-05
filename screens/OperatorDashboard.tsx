@@ -129,10 +129,6 @@ export const OperatorDashboard: React.FC = () => {
     }
   };
 
-  const handleBusinessChange = async (business: Business) => {
-    setCurrentBusiness(business);
-  };
-
   const handleSaveBusiness = async () => {
     if (!currentBusiness) return;
     
@@ -486,28 +482,21 @@ export const OperatorDashboard: React.FC = () => {
         </div>
 
         <div className="px-4 py-6 space-y-1 flex-1">
-          <div className="mb-6 px-4">
-             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Organization</p>
-             <select
-               value={currentBusiness?.id || ''}
-               onChange={(e) => {
-                 const business = businesses.find(b => b.id === e.target.value);
-                 if (business) handleBusinessChange(business);
-               }}
-               className="w-full flex items-center gap-2 p-2 rounded-lg bg-gray-50 border border-gray-200 text-sm"
-             >
-                {businesses.map(b => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
-                ))}
-             </select>
-          </div>
+           <div className="mb-6 px-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Organization</p>
+              {currentBusiness && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 border border-gray-200 text-sm">
+                  <span className="font-medium">{currentBusiness.name}</span>
+                </div>
+              )}
+           </div>
 
-          <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6">Main Menu</p>
-          <NavItem id="DASHBOARD" label="Overview" icon={LayoutDashboard} />
-          <NavItem id="BOOKINGS" label="Bookings" icon={Calendar} />
-          <NavItem id="SERVICES" label="Services" icon={Briefcase} />
-          <NavItem id="AVAILABILITY" label="Availability" icon={Clock} />
-          <NavItem id="SETTINGS" label="Settings" icon={Settings} />
+           <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6">Main Menu</p>
+           <NavItem id="DASHBOARD" label="Overview" icon={LayoutDashboard} />
+           <NavItem id="BOOKINGS" label="Bookings" icon={Calendar} />
+           <NavItem id="SERVICES" label="Services" icon={Briefcase} />
+           <NavItem id="AVAILABILITY" label="Availability" icon={Clock} />
+           <NavItem id="SETTINGS" label="Settings" icon={Settings} />
         </div>
 
         <div className="p-4 border-t border-gray-100">

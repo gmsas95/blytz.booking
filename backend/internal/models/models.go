@@ -18,6 +18,7 @@ const (
 
 type Business struct {
 	ID              uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	OwnerID         uuid.UUID `json:"-" gorm:"type:uuid;not null;index;unique"`
 	Name            string    `json:"name" gorm:"not null"`
 	Slug            string    `json:"slug" gorm:"uniqueIndex;not null"`
 	Vertical        string    `json:"vertical" gorm:"not null"`
@@ -27,6 +28,26 @@ type Business struct {
 	MaxBookings     int       `json:"max_bookings" gorm:"default:1"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
+	Owner           User      `json:"-" gorm:"foreignKey:OwnerID"`
+}
+
+type Employee struct {
+	ID         uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	BusinessID uuid.UUID `json:"business_id" gorm:"type:uuid;not null;index"`
+	UserID     uuid.UUID `json:"user_id" gorm:"type:uuid;not null;index"`
+	Email      string    `json:"email" gorm:"not null;uniqueIndex"`
+	Role       string    `json:"role" gorm:"not null;default:'staff'"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+	Business   Business  `json:"-" gorm:"foreignKey:BusinessID"`
+	User       User      `json:"-" gorm:"foreignKey:UserID"`
+}
+
+func (e *Employee) BeforeCreate(tx *gorm.DB) error {
+	if e.ID == uuid.Nil {
+		e.ID = uuid.New()
+	}
+	return nil
 }
 
 type BusinessAvailability struct {

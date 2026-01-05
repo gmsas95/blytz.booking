@@ -46,7 +46,13 @@ func (h *Handler) HealthCheck(c *gin.Context) {
 
 // Business Handlers
 func (h *Handler) ListBusinesses(c *gin.Context) {
-	businesses, err := h.BusinessService.GetAll()
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+		return
+	}
+	businesses, err := h.BusinessService.GetByUser(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch businesses"})
 		return
@@ -77,6 +83,13 @@ func (h *Handler) GetBusiness(c *gin.Context) {
 		return
 	}
 
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+		return
+	}
+
 	business, err := h.BusinessService.GetByID(businessID)
 	if err != nil {
 		if err == services.ErrNotFound {
@@ -84,6 +97,11 @@ func (h *Handler) GetBusiness(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch business"})
+		return
+	}
+
+	if business.OwnerID != userID {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "You don't have access to this business"})
 		return
 	}
 
@@ -140,6 +158,19 @@ func (h *Handler) UpdateBusiness(c *gin.Context) {
 		return
 	}
 
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+		return
+	}
+
+	var existingBusiness models.Business
+	if err := h.Repo.DB.Where("id = ? AND owner_id = ?", businessID, userID).First(&existingBusiness).Error; err != nil {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "Business not found or you don't have access"})
+		return
+	}
+
 	var req dto.UpdateBusinessRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
@@ -184,6 +215,19 @@ func (h *Handler) GetServicesByBusiness(c *gin.Context) {
 		return
 	}
 
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+		return
+	}
+
+	var business models.Business
+	if err := h.Repo.DB.Where("id = ? AND owner_id = ?", businessUUID, userID).First(&business).Error; err != nil {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "You don't have access to this business"})
+		return
+	}
+
 	services, err := h.ServiceService.GetByBusiness(businessUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch services"})
@@ -213,6 +257,19 @@ func (h *Handler) CreateService(c *gin.Context) {
 	businessID, err := uuid.Parse(businessIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
+		return
+	}
+
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+		return
+	}
+
+	var business models.Business
+	if err := h.Repo.DB.Where("id = ? AND owner_id = ?", businessID, userID).First(&business).Error; err != nil {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "You don't have access to this business"})
 		return
 	}
 
@@ -263,6 +320,19 @@ func (h *Handler) UpdateService(c *gin.Context) {
 	serviceUUID, err := uuid.Parse(serviceID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid service ID"})
+		return
+	}
+
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+		return
+	}
+
+	var business models.Business
+	if err := h.Repo.DB.Where("id = ? AND owner_id = ?", businessUUID, userID).First(&business).Error; err != nil {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "You don't have access to this business"})
 		return
 	}
 
@@ -328,6 +398,19 @@ func (h *Handler) DeleteService(c *gin.Context) {
 		return
 	}
 
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+		return
+	}
+
+	var business models.Business
+	if err := h.Repo.DB.Where("id = ? AND owner_id = ?", businessUUID, userID).First(&business).Error; err != nil {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "You don't have access to this business"})
+		return
+	}
+
 	// Verify service belongs to business
 	service, err := h.ServiceService.GetByID(serviceUUID)
 	if err != nil {
@@ -361,6 +444,19 @@ func (h *Handler) GetSlotsByBusiness(c *gin.Context) {
 		return
 	}
 
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+		return
+	}
+
+	var business models.Business
+	if err := h.Repo.DB.Where("id = ? AND owner_id = ?", businessUUID, userID).First(&business).Error; err != nil {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "You don't have access to this business"})
+		return
+	}
+
 	slots, err := h.SlotService.GetAvailableByBusiness(businessUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch slots"})
@@ -388,6 +484,19 @@ func (h *Handler) CreateSlot(c *gin.Context) {
 	businessUUID, err := uuid.Parse(businessIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
+		return
+	}
+
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+		return
+	}
+
+	var business models.Business
+	if err := h.Repo.DB.Where("id = ? AND owner_id = ?", businessUUID, userID).First(&business).Error; err != nil {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "You don't have access to this business"})
 		return
 	}
 
@@ -451,6 +560,19 @@ func (h *Handler) DeleteSlot(c *gin.Context) {
 	slotUUID, err := uuid.Parse(slotID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid slot ID"})
+		return
+	}
+
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+		return
+	}
+
+	var business models.Business
+	if err := h.Repo.DB.Where("id = ? AND owner_id = ?", businessUUID, userID).First(&business).Error; err != nil {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "You don't have access to this business"})
 		return
 	}
 
@@ -548,6 +670,19 @@ func (h *Handler) ListBookings(c *gin.Context) {
 		return
 	}
 
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+		return
+	}
+
+	var business models.Business
+	if err := h.Repo.DB.Where("id = ? AND owner_id = ?", businessUUID, userID).First(&business).Error; err != nil {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "You don't have access to this business"})
+		return
+	}
+
 	bookings, err := h.BookingService.GetByBusiness(businessUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch bookings"})
@@ -592,6 +727,19 @@ func (h *Handler) CancelBooking(c *gin.Context) {
 	bookingUUID, err := uuid.Parse(bookingID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid booking ID"})
+		return
+	}
+
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+		return
+	}
+
+	var business models.Business
+	if err := h.Repo.DB.Where("id = ? AND owner_id = ?", businessUUID, userID).First(&business).Error; err != nil {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "You don't have access to this business"})
 		return
 	}
 
@@ -744,6 +892,19 @@ func (h *Handler) GetAvailability(c *gin.Context) {
 		return
 	}
 
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+		return
+	}
+
+	var business models.Business
+	if err := h.Repo.DB.Where("id = ? AND owner_id = ?", businessUUID, userID).First(&business).Error; err != nil {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "You don't have access to this business"})
+		return
+	}
+
 	availabilities, err := h.AvailabilityService.GetByBusiness(businessUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to fetch availability"})
@@ -772,6 +933,19 @@ func (h *Handler) SetAvailability(c *gin.Context) {
 	businessUUID, err := uuid.Parse(businessID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
+		return
+	}
+
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+		return
+	}
+
+	var business models.Business
+	if err := h.Repo.DB.Where("id = ? AND owner_id = ?", businessUUID, userID).First(&business).Error; err != nil {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "You don't have access to this business"})
 		return
 	}
 
@@ -812,6 +986,19 @@ func (h *Handler) GenerateSlots(c *gin.Context) {
 	businessUUID, err := uuid.Parse(businessID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
+		return
+	}
+
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+		return
+	}
+
+	var business models.Business
+	if err := h.Repo.DB.Where("id = ? AND owner_id = ?", businessUUID, userID).First(&business).Error; err != nil {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "You don't have access to this business"})
 		return
 	}
 

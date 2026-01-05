@@ -47,6 +47,14 @@ func (s *BusinessService) GetBySlug(slug string) (*models.Business, error) {
 	return &business, nil
 }
 
+func (s *BusinessService) GetByUser(userID uuid.UUID) ([]models.Business, error) {
+	var businesses []models.Business
+	if err := s.DB.Where("owner_id = ?", userID).Find(&businesses).Error; err != nil {
+		return nil, err
+	}
+	return businesses, nil
+}
+
 func (s *BusinessService) Create(business *models.Business) error {
 	if err := s.DB.Create(business).Error; err != nil {
 		return err

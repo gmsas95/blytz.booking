@@ -136,11 +136,11 @@ func main() {
 			})
 		})
 
-		// Businesses
-		v1.GET("/businesses", handler.ListBusinesses)
-		v1.POST("/businesses", handler.CreateBusiness)
-		v1.GET("/businesses/:businessId", handler.GetBusiness)
-		v1.PUT("/businesses/:businessId", handler.UpdateBusiness)
+		// Businesses (protected)
+		v1.GET("/businesses", auth.AuthMiddleware(), handler.ListBusinesses)
+		v1.POST("/businesses", auth.AuthMiddleware(), handler.CreateBusiness)
+		v1.GET("/businesses/:businessId", auth.AuthMiddleware(), handler.GetBusiness)
+		v1.PUT("/businesses/:businessId", auth.AuthMiddleware(), handler.UpdateBusiness)
 		v1.GET("/business/by-subdomain", func(c *gin.Context) {
 			slug := c.Query("slug")
 			if slug == "" {
@@ -169,26 +169,26 @@ func main() {
 			})
 		})
 
-		// Services
-		v1.GET("/businesses/:businessId/services", handler.GetServicesByBusiness)
-		v1.POST("/businesses/:businessId/services", handler.CreateService)
-		v1.PUT("/businesses/:businessId/services/:serviceId", handler.UpdateService)
-		v1.DELETE("/businesses/:businessId/services/:serviceId", handler.DeleteService)
+		// Services (protected)
+		v1.GET("/businesses/:businessId/services", auth.AuthMiddleware(), handler.GetServicesByBusiness)
+		v1.POST("/businesses/:businessId/services", auth.AuthMiddleware(), handler.CreateService)
+		v1.PUT("/businesses/:businessId/services/:serviceId", auth.AuthMiddleware(), handler.UpdateService)
+		v1.DELETE("/businesses/:businessId/services/:serviceId", auth.AuthMiddleware(), handler.DeleteService)
 
-		// Slots
-		v1.GET("/businesses/:businessId/slots", handler.GetSlotsByBusiness)
-		v1.POST("/businesses/:businessId/slots", handler.CreateSlot)
-		v1.DELETE("/businesses/:businessId/slots/:slotId", handler.DeleteSlot)
+		// Slots (protected)
+		v1.GET("/businesses/:businessId/slots", auth.AuthMiddleware(), handler.GetSlotsByBusiness)
+		v1.POST("/businesses/:businessId/slots", auth.AuthMiddleware(), handler.CreateSlot)
+		v1.DELETE("/businesses/:businessId/slots/:slotId", auth.AuthMiddleware(), handler.DeleteSlot)
 
-		// Availability
-		v1.GET("/businesses/:businessId/availability", handler.GetAvailability)
-		v1.POST("/businesses/:businessId/availability", handler.SetAvailability)
-		v1.POST("/businesses/:businessId/slots/generate", handler.GenerateSlots)
+		// Availability (protected)
+		v1.GET("/businesses/:businessId/availability", auth.AuthMiddleware(), handler.GetAvailability)
+		v1.POST("/businesses/:businessId/availability", auth.AuthMiddleware(), handler.SetAvailability)
+		v1.POST("/businesses/:businessId/slots/generate", auth.AuthMiddleware(), handler.GenerateSlots)
 
 		// Bookings
 		v1.POST("/bookings", handler.CreateBooking)
-		v1.GET("/businesses/:businessId/bookings", handler.ListBookings)
-		v1.DELETE("/businesses/:businessId/bookings/:bookingId", handler.CancelBooking)
+		v1.GET("/businesses/:businessId/bookings", auth.AuthMiddleware(), handler.ListBookings)
+		v1.DELETE("/businesses/:businessId/bookings/:bookingId", auth.AuthMiddleware(), handler.CancelBooking)
 	}
 
 	// Start server

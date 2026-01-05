@@ -3,6 +3,7 @@ package services
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"strings"
 	"time"
 
 	"blytz.cloud/backend/internal/auth"
@@ -44,6 +45,24 @@ func (s *AuthService) Register(email, name, password string) (*models.User, stri
 
 	if err := s.DB.Create(&user).Error; err != nil {
 		return nil, "", err
+	}
+
+	// Create default business for new user
+	businessSlug := strings.ToLower(strings.ReplaceAll(name, " ", "-"))
+	business := &models.Business{
+		OwnerID:         user.ID, // NEW
+		Name:            name + "'s Business",
+		Slug:            businessSlug,
+		Vertical:        "General",
+		Description:     "Your business for scheduling and bookings",
+		ThemeColor:      "blue",
+		SlotDurationMin: 30,
+		MaxBookings:     1,
+	}
+
+	if err := s.DB.Create(business).Error; err != nil {
+		// Log error but don't fail registration
+		// Business creation is optional
 	}
 
 	// Generate token
