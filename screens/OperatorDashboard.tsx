@@ -60,19 +60,7 @@ export const OperatorDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [currentBusiness]);
-
-  useEffect(() => {
-    if (currentBusiness) {
-      setBusinessForm({
-        name: currentBusiness.name,
-        slug: currentBusiness.slug,
-        vertical: currentBusiness.vertical,
-        description: currentBusiness.description,
-        theme_color: currentBusiness.themeColor
-      });
-    }
-  }, [currentBusiness]);
+  }, []);
 
   useEffect(() => {
     if (currentBusiness) {
