@@ -160,9 +160,7 @@ export const OperatorDashboard: React.FC = () => {
         slug: autoSlug,
         vertical: businessForm.vertical || 'General',
         description: businessForm.description,
-        theme_color: businessForm.theme_color,
-        slotDurationMin: 30,
-        maxBookings: 1
+        theme_color: businessForm.theme_color
       });
       await fetchData();
       alert('Business created successfully!');
