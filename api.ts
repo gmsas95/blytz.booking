@@ -138,7 +138,6 @@ export interface JobRecord {
 }
 
 export interface AuthResponse {
-  token: string;
   user: User;
 }
 
@@ -163,17 +162,14 @@ class ApiClient {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
-    const token = localStorage.getItem('token');
     const headers = new Headers(options?.headers);
     if (!headers.has('Content-Type')) {
       headers.set('Content-Type', 'application/json');
     }
-    if (token && !headers.has('Authorization')) {
-      headers.set('Authorization', `Bearer ${token}`);
-    }
 
     const response = await fetch(url, {
       ...options,
+      credentials: 'include',
       headers,
     });
 
@@ -209,16 +205,10 @@ class ApiClient {
     return this.request<CurrentUserResponse>('/api/v1/auth/me');
   }
 
-  setToken(token: string): void {
-    localStorage.setItem('token', token);
-  }
-
-  getToken(): string | null {
-    return localStorage.getItem('token');
-  }
-
-  logout(): void {
-    localStorage.removeItem('token');
+  async logout(): Promise<void> {
+    await this.request<{ ok: boolean }>('/api/v1/auth/logout', {
+      method: 'POST',
+    });
   }
 
   async getBusinesses(): Promise<Business[]> {

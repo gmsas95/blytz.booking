@@ -23,14 +23,13 @@ export const Login: React.FC = () => {
     setError('');
 
     try {
-      let response;
       if (isRegister) {
-        response = await api.register({ email, name, password });
+        await api.register({ email, name, password });
       } else {
-        response = await api.login({ email, password });
+        await api.login({ email, password });
       }
 
-      await login(response.token);
+      await login();
       const nextPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/dashboard';
       navigate(nextPath);
     } catch (err: any) {

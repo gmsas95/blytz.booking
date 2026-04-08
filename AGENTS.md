@@ -23,15 +23,17 @@ Blytz.Cloud is a **booking management prototype** for freelancers and service bu
 - JWT-based authentication system with password hashing
 - User registration and login endpoints
 - Protected routes with auth middleware
-- Token storage in frontend localStorage
+- httpOnly cookie-backed auth session flow
 - **NEW**: Service layer architecture for backend (separation of concerns)
 - **NEW**: Business logic in services (booking validation, slot availability checks)
 - **NEW**: Real React Router implementation with BrowserRouter
 - **NEW**: AuthContext for global authentication state management
 - **NEW**: ProtectedRoute component for route-based access control
+- **NEW**: Auth rate limiting on login/register
+- **NEW**: Workshop-scoped customers, vehicles, and jobs
 
 ### ❌ Critical Missing Features
-- **Security**: No input validation, rate limiting, or proper error handling
+- **Security**: Input validation, broader error handling, and final auth enumeration hardening still need work
 - **Business Logic**: No payment processing, notifications, or conflict resolution
 - **DTOs**: No dedicated request/response structures
 - **Password Reset**: No forgot password functionality
@@ -92,10 +94,9 @@ docker-compose up -d --build
 3. **Poor Error Handling**: Generic error messages
 
 ### Critical Security Problems
-- CORS allows all origins (`*`)
 - No input sanitization
-- No rate limiting
 - JWT authentication implemented but not enforced on all routes
+- Registration still returns a distinct conflict status for existing emails
 
 ## API Endpoints (Basic CRUD Only)
 

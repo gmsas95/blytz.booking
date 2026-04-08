@@ -7,18 +7,35 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var cookieName = "blytz_session"
+
+func SetCookieName(name string) {
+	if name != "" {
+		cookieName = name
+	}
+}
+
+func CookieName() string {
+	return cookieName
+}
+
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
-			c.Abort()
-			return
+		tokenString := ""
+		if cookie, err := c.Cookie(cookieName); err == nil {
+			tokenString = cookie
 		}
-
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		if tokenString == authHeader {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Bearer token required"})
+		if tokenString == "" {
+			authHeader := c.GetHeader("Authorization")
+			if authHeader != "" {
+				tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+				if tokenString == authHeader {
+					tokenString = ""
+				}
+			}
+		}
+		if tokenString == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
 			c.Abort()
 			return
 		}

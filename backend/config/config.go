@@ -39,7 +39,8 @@ type StartupConfig struct {
 }
 
 type JWTConfig struct {
-	Secret string
+	Secret     string
+	CookieName string
 }
 
 func LoadConfig() *Config {
@@ -52,7 +53,7 @@ func LoadConfig() *Config {
 			Host:     getEnv("DB_HOST", "localhost"),
 			Port:     getEnv("DB_PORT", "5432"),
 			User:     getEnv("DB_USER", "postgres"),
-			Password: getEnv("DB_PASSWORD", "postgres"),
+			Password: getEnv("DB_PASSWORD", ""),
 			DBName:   getEnv("DB_NAME", "blytz"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
@@ -65,7 +66,8 @@ func LoadConfig() *Config {
 			BackfillMoney: getEnvAsBool("BACKFILL_MONEY_FIELDS", getEnv("ENV", "development") != "production"),
 		},
 		JWT: JWTConfig{
-			Secret: getEnv("JWT_SECRET", ""),
+			Secret:     getEnv("JWT_SECRET", ""),
+			CookieName: getEnv("JWT_COOKIE_NAME", "blytz_session"),
 		},
 	}
 }

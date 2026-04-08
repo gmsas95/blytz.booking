@@ -82,12 +82,10 @@ docker-compose down
 - Responsive UI with Tailwind CSS
 
 ### ❌ Critical Missing Features
-- **Authentication System**: No user registration or login
-- **Security**: No input validation, rate limiting, or proper error handling
+- **Auth Hardening**: Registration enumeration hardening is still partial
+- **Security**: Input validation and error handling still need more production hardening
 - **Payment Processing**: Only simulation, no real payment integration
-- **Business Logic**: No booking conflicts, notifications, or status management
-- **Frontend Routing**: Fake routing with state switching instead of React Router
-- **Backend Architecture**: No service layer, direct database access in handlers
+- **Business Logic**: Notifications and subscription enforcement are still missing
 
 ## Architecture Overview
 
@@ -134,7 +132,7 @@ GET  /api/v1/businesses/:id/bookings # List bookings for business (auth + member
 GET  /health                         # Service health status
 ```
 
-**Note:** Authentication exists, and operator booking access is now workshop-membership scoped.
+**Note:** Authentication uses httpOnly cookie sessions, and operator workshop access is membership scoped.
 
 ## Environment Configuration
 
@@ -163,31 +161,24 @@ CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 
 # JWT
 JWT_SECRET=your-secret-key
+JWT_COOKIE_NAME=blytz_session
 ```
 
 ## Development Issues & Limitations
 
 ### Frontend Issues
-- **Fake Authentication**: Login is just a mock with `setTimeout()`
-- **No Real Routing**: Uses state switching instead of React Router
 - **Mixed Concerns**: API client and types in same file
-- **Mock Data Dependency**: Falls back to mock data on API failures
 - **No Error Boundaries**: App crashes on errors
 
 ### Backend Issues
-- **No Service Layer**: Business logic in HTTP handlers
-- **No Authentication**: Zero auth endpoints despite User model
 - **No Validation**: Only basic GORM model validation
 - **No Error Handling**: Generic error messages
-- **Security Issues**: CORS allows all origins, no input sanitization
+- **Security Issues**: Registration enumeration hardening is still partial
 
 ### Security Problems
-- No authentication/authorization
 - No input validation or sanitization
-- No rate limiting
-- No JWT implementation (secret exists but unused)
-- CORS allows all origins (`*`)
-- No password hashing
+- Registration still returns a distinct conflict status for existing emails
+- Client-side active workshop preference is still stored in localStorage
 
 ## Roadmap to Production
 
@@ -213,11 +204,21 @@ JWT_SECRET=your-secret-key
 - [ ] Create admin dashboard for business management
 
 ### Phase 4: Security & Performance (1-2 weeks)
-- [ ] Implement rate limiting and DDoS protection
+- [x] Implement auth rate limiting
 - [ ] Add input sanitization and SQL injection prevention
-- [ ] Configure proper CORS policies
+- [x] Configure proper CORS policies
 - [ ] Add request/response logging
 - [ ] Implement database indexing optimization
+
+## Release Checklist
+
+- [ ] `JWT_SECRET` explicitly set
+- [ ] `DB_PASSWORD` explicitly set
+- [ ] `CORS_ALLOWED_ORIGINS` matches deployed frontend origins
+- [ ] `SEED_DATA=false`
+- [ ] `AUTO_MIGRATE` reviewed for deploy target
+- [ ] `go test ./...` passes
+- [ ] `npm run build` passes
 
 ## Common Development Commands
 

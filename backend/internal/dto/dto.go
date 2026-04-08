@@ -14,8 +14,7 @@ type LoginRequest struct {
 }
 
 type AuthResponse struct {
-	Token string       `json:"token"`
-	User  UserResponse `json:"user"`
+	User UserResponse `json:"user"`
 }
 
 type MembershipBusinessResponse struct {

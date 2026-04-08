@@ -54,9 +54,13 @@ func seedHandlerTestData(t *testing.T, db *gorm.DB) (string, string, string) {
 	businessID := uuid.New().String()
 	otherBusinessID := uuid.New().String()
 	now := time.Now().UTC().Format(time.RFC3339)
+	hashedPassword, err := auth.HashPassword("password123")
+	if err != nil {
+		t.Fatalf("hash password: %v", err)
+	}
 
 	queries := []string{
-		fmt.Sprintf(`INSERT INTO users (id, email, name, password_hash, created_at, updated_at) VALUES ('%s', 'owner@example.com', 'Owner', 'hash', '%s', '%s')`, userID, now, now),
+		fmt.Sprintf(`INSERT INTO users (id, email, name, password_hash, created_at, updated_at) VALUES ('%s', 'owner@example.com', 'Owner', '%s', '%s', '%s')`, userID, hashedPassword, now, now),
 		fmt.Sprintf(`INSERT INTO businesses (id, name, slug, vertical, description, theme_color, created_at, updated_at) VALUES ('%s', 'DetailPro Automotive', 'detail-pro', 'Automotive', 'Premium detailing workshop', 'blue', '%s', '%s')`, businessID, now, now),
 		fmt.Sprintf(`INSERT INTO businesses (id, name, slug, vertical, description, theme_color, created_at, updated_at) VALUES ('%s', 'Other Workshop', 'other-workshop', 'Automotive', 'Second workshop', 'zinc', '%s', '%s')`, otherBusinessID, now, now),
 		fmt.Sprintf(`INSERT INTO memberships (id, user_id, business_id, role, created_at, updated_at) VALUES ('%s', '%s', '%s', 'OWNER', '%s', '%s')`, uuid.New().String(), userID, businessID, now, now),
@@ -79,7 +83,12 @@ func setupHandlerRouter(db *gorm.DB) *gin.Engine {
 	handler := NewHandler(repo)
 	router := gin.New()
 	v1 := router.Group("/api/v1")
+	authRoutes := v1.Group("/auth")
+	authRoutes.Use(middleware.RateLimitByIP(10, time.Minute))
+	authRoutes.POST("/login", handler.Login)
+	authRoutes.POST("/register", handler.Register)
 	v1.GET("/auth/me", auth.AuthMiddleware(), handler.GetCurrentUser)
+	v1.POST("/auth/logout", handler.Logout)
 	operator := v1.Group("/businesses/:businessId")
 	operator.Use(auth.AuthMiddleware(), middleware.RequireBusinessMembership(handler.AuthService))
 	operator.GET("/bookings", handler.ListBookings)
@@ -208,5 +217,75 @@ func TestCreateVehicleRejectsForeignCustomerReference(t *testing.T) {
 
 	if recorder.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400 for foreign customer reference, got %d", recorder.Code)
+	}
+}
+
+func TestLoginIsRateLimitedByIP(t *testing.T) {
+	db := setupHandlerTestDB(t)
+	_, _, _ = seedHandlerTestData(t, db)
+	router := setupHandlerRouter(db)
+
+	body := `{"email":"owner@example.com","password":"wrong-password"}`
+	for i := 0; i < 10; i++ {
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, req)
+		if recorder.Code != http.StatusUnauthorized {
+			t.Fatalf("expected 401 before limit, got %d on attempt %d", recorder.Code, i+1)
+		}
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, req)
+	if recorder.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected 429 after rate limit, got %d", recorder.Code)
+	}
+}
+
+func TestLoginSetsSessionCookieAndAuthMeAcceptsIt(t *testing.T) {
+	db := setupHandlerTestDB(t)
+	userID, businessID, _ := seedHandlerTestData(t, db)
+	router := setupHandlerRouter(db)
+
+	loginBody := `{"email":"owner@example.com","password":"password123"}`
+	loginReq := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(loginBody))
+	loginReq.Header.Set("Content-Type", "application/json")
+	loginRecorder := httptest.NewRecorder()
+	router.ServeHTTP(loginRecorder, loginReq)
+
+	if loginRecorder.Code != http.StatusOK {
+		t.Fatalf("expected 200 login, got %d", loginRecorder.Code)
+	}
+	cookies := loginRecorder.Result().Cookies()
+	if len(cookies) == 0 {
+		t.Fatal("expected auth cookie to be set")
+	}
+
+	authMeReq := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
+	authMeReq.AddCookie(cookies[0])
+	authMeRecorder := httptest.NewRecorder()
+	router.ServeHTTP(authMeRecorder, authMeReq)
+
+	if authMeRecorder.Code != http.StatusOK {
+		t.Fatalf("expected 200 auth/me with cookie, got %d", authMeRecorder.Code)
+	}
+
+	var payload struct {
+		User struct {
+			ID string `json:"id"`
+		} `json:"user"`
+		ActiveBusinessID string `json:"active_business_id"`
+	}
+	if err := json.Unmarshal(authMeRecorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode auth/me: %v", err)
+	}
+	if payload.User.ID != userID {
+		t.Fatalf("expected user id %s, got %s", userID, payload.User.ID)
+	}
+	if payload.ActiveBusinessID != businessID {
+		t.Fatalf("expected business id %s, got %s", businessID, payload.ActiveBusinessID)
 	}
 }

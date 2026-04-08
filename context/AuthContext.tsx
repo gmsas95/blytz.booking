@@ -8,8 +8,8 @@ interface AuthContextType {
   memberships: Membership[];
   activeBusinessId: string | null;
   activeMembership: Membership | null;
-  login: (token?: string) => Promise<void>;
-  logout: () => void;
+  login: () => Promise<void>;
+  logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
   setActiveBusinessId: (businessId: string) => void;
 }
@@ -56,19 +56,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const refreshSession = async () => {
-    const token = api.getToken();
-    if (!token) {
-      clearSession();
-      setIsLoading(false);
-      return;
-    }
-
     setIsLoading(true);
     try {
       const session = await api.getCurrentUser();
       applySession(session);
     } catch {
-      api.logout();
       clearSession();
     } finally {
       setIsLoading(false);
@@ -79,15 +71,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshSession();
   }, []);
 
-  const login = async (token?: string) => {
-    if (token) {
-      api.setToken(token);
-    }
+  const login = async () => {
     await refreshSession();
   };
 
-  const logout = () => {
-    api.logout();
+  const logout = async () => {
+    try {
+      await api.logout();
+    } catch {
+      // best-effort logout; clear local state regardless
+    }
     clearSession();
     setIsLoading(false);
   };

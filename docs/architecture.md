@@ -150,8 +150,7 @@ Current status:
 
 Remaining ship blockers:
 
-- bearer tokens are still stored client-side in `localStorage`
-- auth endpoints still need rate limiting and enumeration hardening
+- auth now uses httpOnly cookie sessions, but registration still returns a distinct conflict status
 - subscription enforcement is not implemented yet
 
 ## Deployment Baseline

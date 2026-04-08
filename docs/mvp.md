@@ -92,6 +92,5 @@ The MVP is successful when:
 ## Remaining MVP Hardening Before Shipping
 
 - explicit JWT secret in every environment
-- auth rate limiting / brute-force protection
-- reduced token exposure compared with `localStorage`
+- auth enumeration hardening on registration
 - subscription state and enforcement for paid workshops

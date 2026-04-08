@@ -8,8 +8,7 @@ This repo is useful as a base, but still contains prototype assumptions:
 
 - stale docs
 - remaining auth hardening work before shipping
-- localStorage token storage still increases XSS blast radius
-- rate limiting and auth enumeration defenses are still missing
+- registration enumeration hardening is still partial
 - subscriptions/billing controls are not implemented yet
 
 ### Slice 1 status

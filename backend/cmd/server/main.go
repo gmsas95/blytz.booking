@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"blytz.cloud/backend/config"
 	"blytz.cloud/backend/internal/auth"
@@ -20,7 +21,11 @@ func main() {
 	if cfg.JWT.Secret == "" || cfg.JWT.Secret == "change-me-in-production" {
 		log.Fatal("JWT_SECRET must be explicitly configured")
 	}
+	if cfg.Database.Password == "" {
+		log.Fatal("DB_PASSWORD must be explicitly configured")
+	}
 	auth.SetJWTSecret(cfg.JWT.Secret)
+	auth.SetCookieName(cfg.JWT.CookieName)
 
 	// Set Gin mode
 	if cfg.Server.Env == "production" {
@@ -94,8 +99,11 @@ func main() {
 	v1 := r.Group("/api/v1")
 	{
 		// Auth routes (public)
-		v1.POST("/auth/register", handler.Register)
-		v1.POST("/auth/login", handler.Login)
+		authRoutes := v1.Group("/auth")
+		authRoutes.Use(middleware.RateLimitByIP(10, time.Minute))
+		authRoutes.POST("/register", handler.Register)
+		authRoutes.POST("/login", handler.Login)
+		v1.POST("/auth/logout", handler.Logout)
 
 		// Protected routes
 		v1.GET("/auth/me", auth.AuthMiddleware(), handler.GetCurrentUser)

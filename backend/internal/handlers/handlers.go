@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"blytz.cloud/backend/internal/auth"
 	"blytz.cloud/backend/internal/dto"
 	"blytz.cloud/backend/internal/models"
 	"blytz.cloud/backend/internal/repository"
@@ -106,6 +107,18 @@ func (h *Handler) HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": "healthy",
 	})
+}
+
+func setSessionCookie(c *gin.Context, token string) {
+	c.SetSameSite(http.SameSiteLaxMode)
+	secure := c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https"
+	c.SetCookie(auth.CookieName(), token, 60*60*24, "/", "", secure, true)
+}
+
+func clearSessionCookie(c *gin.Context) {
+	c.SetSameSite(http.SameSiteLaxMode)
+	secure := c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https"
+	c.SetCookie(auth.CookieName(), "", -1, "/", "", secure, true)
 }
 
 func (h *Handler) GetCurrentUser(c *gin.Context) {
@@ -558,15 +571,15 @@ func (h *Handler) Register(c *gin.Context) {
 	user, token, err := h.AuthService.Register(req.Email, req.Name, req.Password)
 	if err != nil {
 		if err == services.ErrConflict {
-			c.JSON(http.StatusConflict, dto.ErrorResponse{Error: "Email already registered"})
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Unable to complete registration"})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to create user"})
 		return
 	}
+	setSessionCookie(c, token)
 
 	c.JSON(http.StatusCreated, dto.AuthResponse{
-		Token: token,
 		User: dto.UserResponse{
 			ID:        user.ID.String(),
 			Email:     user.Email,
@@ -592,9 +605,9 @@ func (h *Handler) Login(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to login"})
 		return
 	}
+	setSessionCookie(c, token)
 
 	c.JSON(http.StatusOK, dto.AuthResponse{
-		Token: token,
 		User: dto.UserResponse{
 			ID:        user.ID.String(),
 			Email:     user.Email,
@@ -602,4 +615,9 @@ func (h *Handler) Login(c *gin.Context) {
 			CreatedAt: user.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		},
 	})
+}
+
+func (h *Handler) Logout(c *gin.Context) {
+	clearSessionCookie(c)
+	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
