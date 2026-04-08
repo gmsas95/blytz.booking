@@ -12,6 +12,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const dummyPasswordHash = "$2a$10$7EqJtq98hPqEX7fNZaFWoO.HxQ9gZQh1g0X1p1rRZ8bG8z2u4Vt6G"
+
 type AuthService struct {
 	*BaseService
 }
@@ -23,9 +25,9 @@ func NewAuthService(db *gorm.DB) *AuthService {
 }
 
 func (s *AuthService) Register(email, name, password string) (*models.User, string, error) {
-	// Check if user already exists
 	var existingUser models.User
 	if err := s.DB.Where("email = ?", email).First(&existingUser).Error; err == nil {
+		auth.CheckPassword(password, dummyPasswordHash)
 		return nil, "", ErrConflict
 	}
 
@@ -65,7 +67,7 @@ func (s *AuthService) Register(email, name, password string) (*models.User, stri
 	}
 
 	// Generate token
-	token, err := auth.GenerateToken(user.ID.String(), user.Email)
+	token, err := auth.GenerateToken(user.ID.String(), user.Email, user.TokenVersion)
 	if err != nil {
 		return nil, "", err
 	}
@@ -88,6 +90,7 @@ func (s *AuthService) Login(email, password string) (*models.User, string, error
 	var user models.User
 	if err := s.DB.Where("email = ?", email).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
+			auth.CheckPassword(password, dummyPasswordHash)
 			return nil, "", ErrUnauthorized
 		}
 		return nil, "", err
@@ -99,12 +102,34 @@ func (s *AuthService) Login(email, password string) (*models.User, string, error
 	}
 
 	// Generate token
-	token, err := auth.GenerateToken(user.ID.String(), user.Email)
+	token, err := auth.GenerateToken(user.ID.String(), user.Email, user.TokenVersion)
 	if err != nil {
 		return nil, "", err
 	}
 
 	return &user, token, nil
+}
+
+func (s *AuthService) ValidateUserSession(userID uuid.UUID, tokenVersion int) (*models.User, error) {
+	user, err := s.GetByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	if user.TokenVersion != tokenVersion {
+		return nil, ErrUnauthorized
+	}
+	return user, nil
+}
+
+func (s *AuthService) RevokeUserSessions(userID uuid.UUID) error {
+	result := s.DB.Model(&models.User{}).Where("id = ?", userID).Update("token_version", gorm.Expr("token_version + 1"))
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 func (s *AuthService) GetByID(id uuid.UUID) (*models.User, error) {

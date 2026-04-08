@@ -19,6 +19,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const testOrigin = "http://localhost:3000"
+
 func setupHandlerTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
@@ -29,7 +31,7 @@ func setupHandlerTestDB(t *testing.T) *gorm.DB {
 	}
 
 	statements := []string{
-		`CREATE TABLE users (id text PRIMARY KEY, email text NOT NULL, name text, password_hash text NOT NULL, created_at datetime, updated_at datetime)`,
+		`CREATE TABLE users (id text PRIMARY KEY, email text NOT NULL, name text, password_hash text NOT NULL, token_version integer NOT NULL DEFAULT 1, created_at datetime, updated_at datetime)`,
 		`CREATE TABLE businesses (id text PRIMARY KEY, name text NOT NULL, slug text NOT NULL, vertical text NOT NULL, description text, theme_color text, created_at datetime, updated_at datetime)`,
 		`CREATE TABLE memberships (id text PRIMARY KEY, user_id text NOT NULL, business_id text NOT NULL, role text NOT NULL, created_at datetime, updated_at datetime)`,
 		`CREATE TABLE bookings (id text PRIMARY KEY, business_id text NOT NULL, service_id text NOT NULL, slot_id text NOT NULL, service_name text NOT NULL, slot_time datetime NOT NULL, name text NOT NULL, email text NOT NULL, phone text NOT NULL, status text NOT NULL, deposit_paid_minor integer NOT NULL, total_price_minor integer NOT NULL, currency_code text NOT NULL, created_at datetime, updated_at datetime)`,
@@ -60,7 +62,7 @@ func seedHandlerTestData(t *testing.T, db *gorm.DB) (string, string, string) {
 	}
 
 	queries := []string{
-		fmt.Sprintf(`INSERT INTO users (id, email, name, password_hash, created_at, updated_at) VALUES ('%s', 'owner@example.com', 'Owner', '%s', '%s', '%s')`, userID, hashedPassword, now, now),
+		fmt.Sprintf(`INSERT INTO users (id, email, name, password_hash, token_version, created_at, updated_at) VALUES ('%s', 'owner@example.com', 'Owner', '%s', 1, '%s', '%s')`, userID, hashedPassword, now, now),
 		fmt.Sprintf(`INSERT INTO businesses (id, name, slug, vertical, description, theme_color, created_at, updated_at) VALUES ('%s', 'DetailPro Automotive', 'detail-pro', 'Automotive', 'Premium detailing workshop', 'blue', '%s', '%s')`, businessID, now, now),
 		fmt.Sprintf(`INSERT INTO businesses (id, name, slug, vertical, description, theme_color, created_at, updated_at) VALUES ('%s', 'Other Workshop', 'other-workshop', 'Automotive', 'Second workshop', 'zinc', '%s', '%s')`, otherBusinessID, now, now),
 		fmt.Sprintf(`INSERT INTO memberships (id, user_id, business_id, role, created_at, updated_at) VALUES ('%s', '%s', '%s', 'OWNER', '%s', '%s')`, uuid.New().String(), userID, businessID, now, now),
@@ -79,28 +81,31 @@ func seedHandlerTestData(t *testing.T, db *gorm.DB) (string, string, string) {
 
 func setupHandlerRouter(db *gorm.DB) *gin.Engine {
 	gin.SetMode(gin.TestMode)
+	auth.SetJWTSecret("test-secret")
+	auth.SetCookieName("blytz_session")
+	SetForceSecureCookies(false)
 	repo := &repository.Repository{DB: db}
 	handler := NewHandler(repo)
 	router := gin.New()
 	v1 := router.Group("/api/v1")
 	authRoutes := v1.Group("/auth")
-	authRoutes.Use(middleware.RateLimitByIP(10, time.Minute))
+	authRoutes.Use(middleware.RequireAllowedOrigin([]string{testOrigin}), middleware.RateLimitByIP(30, time.Minute), middleware.RateLimitByIPAndEmail(10, time.Minute))
 	authRoutes.POST("/login", handler.Login)
 	authRoutes.POST("/register", handler.Register)
-	v1.GET("/auth/me", auth.AuthMiddleware(), handler.GetCurrentUser)
-	v1.POST("/auth/logout", handler.Logout)
+	v1.GET("/auth/me", auth.AuthMiddleware(handler.AuthService), handler.GetCurrentUser)
+	v1.POST("/auth/logout", middleware.RequireAllowedOrigin([]string{testOrigin}), auth.AuthMiddleware(handler.AuthService), handler.Logout)
 	operator := v1.Group("/businesses/:businessId")
-	operator.Use(auth.AuthMiddleware(), middleware.RequireBusinessMembership(handler.AuthService))
+	operator.Use(auth.AuthMiddleware(handler.AuthService), middleware.RequireBusinessMembership(handler.AuthService))
 	operator.GET("/bookings", handler.ListBookings)
 	operator.GET("/customers", handler.ListCustomers)
-	operator.POST("/vehicles", handler.CreateVehicle)
+	operator.POST("/vehicles", middleware.RequireAllowedOrigin([]string{testOrigin}), handler.CreateVehicle)
 	return router
 }
 
 func authHeaderForTest(t *testing.T, userID string) string {
 	t.Helper()
 	auth.SetJWTSecret("test-secret")
-	token, err := auth.GenerateToken(userID, "owner@example.com")
+	token, err := auth.GenerateToken(userID, "owner@example.com", 1)
 	if err != nil {
 		t.Fatalf("generate token: %v", err)
 	}
@@ -212,6 +217,7 @@ func TestCreateVehicleRejectsForeignCustomerReference(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/businesses/"+businessID+"/vehicles", strings.NewReader(body))
 	req.Header.Set("Authorization", authHeaderForTest(t, userID))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", testOrigin)
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, req)
 
@@ -229,6 +235,7 @@ func TestLoginIsRateLimitedByIP(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Origin", testOrigin)
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, req)
 		if recorder.Code != http.StatusUnauthorized {
@@ -238,6 +245,7 @@ func TestLoginIsRateLimitedByIP(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", testOrigin)
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, req)
 	if recorder.Code != http.StatusTooManyRequests {
@@ -253,6 +261,7 @@ func TestLoginSetsSessionCookieAndAuthMeAcceptsIt(t *testing.T) {
 	loginBody := `{"email":"owner@example.com","password":"password123"}`
 	loginReq := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(loginBody))
 	loginReq.Header.Set("Content-Type", "application/json")
+	loginReq.Header.Set("Origin", testOrigin)
 	loginRecorder := httptest.NewRecorder()
 	router.ServeHTTP(loginRecorder, loginReq)
 
@@ -287,5 +296,42 @@ func TestLoginSetsSessionCookieAndAuthMeAcceptsIt(t *testing.T) {
 	}
 	if payload.ActiveBusinessID != businessID {
 		t.Fatalf("expected business id %s, got %s", businessID, payload.ActiveBusinessID)
+	}
+}
+
+func TestLogoutRevokesCurrentSession(t *testing.T) {
+	db := setupHandlerTestDB(t)
+	_, _, _ = seedHandlerTestData(t, db)
+	router := setupHandlerRouter(db)
+
+	loginBody := `{"email":"owner@example.com","password":"password123"}`
+	loginReq := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(loginBody))
+	loginReq.Header.Set("Content-Type", "application/json")
+	loginReq.Header.Set("Origin", testOrigin)
+	loginRecorder := httptest.NewRecorder()
+	router.ServeHTTP(loginRecorder, loginReq)
+	if loginRecorder.Code != http.StatusOK {
+		t.Fatalf("expected 200 login, got %d", loginRecorder.Code)
+	}
+	cookies := loginRecorder.Result().Cookies()
+	if len(cookies) == 0 {
+		t.Fatal("expected auth cookie to be set")
+	}
+
+	logoutReq := httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil)
+	logoutReq.AddCookie(cookies[0])
+	logoutReq.Header.Set("Origin", testOrigin)
+	logoutRecorder := httptest.NewRecorder()
+	router.ServeHTTP(logoutRecorder, logoutReq)
+	if logoutRecorder.Code != http.StatusOK {
+		t.Fatalf("expected 200 logout, got %d", logoutRecorder.Code)
+	}
+
+	authMeReq := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
+	authMeReq.AddCookie(cookies[0])
+	authMeRecorder := httptest.NewRecorder()
+	router.ServeHTTP(authMeRecorder, authMeReq)
+	if authMeRecorder.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 after logout revocation, got %d", authMeRecorder.Code)
 	}
 }

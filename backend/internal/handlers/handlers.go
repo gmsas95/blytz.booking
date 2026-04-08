@@ -26,6 +26,12 @@ type Handler struct {
 	JobService      *services.JobService
 }
 
+var forceSecureCookies bool
+
+func SetForceSecureCookies(force bool) {
+	forceSecureCookies = force
+}
+
 func getCurrentUserID(c *gin.Context) (uuid.UUID, error) {
 	return uuid.Parse(c.GetString("user_id"))
 }
@@ -111,13 +117,13 @@ func (h *Handler) HealthCheck(c *gin.Context) {
 
 func setSessionCookie(c *gin.Context, token string) {
 	c.SetSameSite(http.SameSiteLaxMode)
-	secure := c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https"
+	secure := forceSecureCookies || c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https"
 	c.SetCookie(auth.CookieName(), token, 60*60*24, "/", "", secure, true)
 }
 
 func clearSessionCookie(c *gin.Context) {
 	c.SetSameSite(http.SameSiteLaxMode)
-	secure := c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https"
+	secure := forceSecureCookies || c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https"
 	c.SetCookie(auth.CookieName(), "", -1, "/", "", secure, true)
 }
 
@@ -305,10 +311,26 @@ func (h *Handler) CreateBooking(c *gin.Context) {
 		return
 	}
 
+	businessID, err := uuid.Parse(req.BusinessID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid business ID"})
+		return
+	}
+	serviceID, err := uuid.Parse(req.ServiceID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid service ID"})
+		return
+	}
+	slotID, err := uuid.Parse(req.SlotID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid slot ID"})
+		return
+	}
+
 	booking := &models.Booking{
-		BusinessID: uuid.MustParse(req.BusinessID),
-		ServiceID:  uuid.MustParse(req.ServiceID),
-		SlotID:     uuid.MustParse(req.SlotID),
+		BusinessID: businessID,
+		ServiceID:  serviceID,
+		SlotID:     slotID,
 		Customer: models.CustomerDetails{
 			Name:  req.Customer.Name,
 			Email: req.Customer.Email,
@@ -618,6 +640,15 @@ func (h *Handler) Login(c *gin.Context) {
 }
 
 func (h *Handler) Logout(c *gin.Context) {
+	userID, err := getCurrentUserID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid user ID"})
+		return
+	}
+	if err := h.AuthService.RevokeUserSessions(userID); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Failed to logout"})
+		return
+	}
 	clearSessionCookie(c)
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }

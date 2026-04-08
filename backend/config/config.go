@@ -39,8 +39,10 @@ type StartupConfig struct {
 }
 
 type JWTConfig struct {
-	Secret     string
-	CookieName string
+	Secret         string
+	CookieName     string
+	ForceSecure    bool
+	TrustedProxies []string
 }
 
 func LoadConfig() *Config {
@@ -66,8 +68,10 @@ func LoadConfig() *Config {
 			BackfillMoney: getEnvAsBool("BACKFILL_MONEY_FIELDS", getEnv("ENV", "development") != "production"),
 		},
 		JWT: JWTConfig{
-			Secret:     getEnv("JWT_SECRET", ""),
-			CookieName: getEnv("JWT_COOKIE_NAME", "blytz_session"),
+			Secret:         getEnv("JWT_SECRET", ""),
+			CookieName:     getEnv("JWT_COOKIE_NAME", "blytz_session"),
+			ForceSecure:    getEnvAsBool("JWT_COOKIE_SECURE", getEnv("ENV", "development") == "production"),
+			TrustedProxies: getEnvAsSlice("TRUSTED_PROXIES", "127.0.0.1"),
 		},
 	}
 }

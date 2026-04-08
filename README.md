@@ -162,6 +162,12 @@ CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 # JWT
 JWT_SECRET=your-secret-key
 JWT_COOKIE_NAME=blytz_session
+JWT_COOKIE_SECURE=false
+TRUSTED_PROXIES=127.0.0.1
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+VITE_API_URL=http://localhost:8080
+APP_DOMAIN=localhost
+API_DOMAIN=api.localhost
 ```
 
 ## Development Issues & Limitations
@@ -179,6 +185,7 @@ JWT_COOKIE_NAME=blytz_session
 - No input validation or sanitization
 - Registration still returns a distinct conflict status for existing emails
 - Client-side active workshop preference is still stored in localStorage
+- JWT logout/session revocation now invalidates prior session cookies
 
 ## Roadmap to Production
 
@@ -214,6 +221,8 @@ JWT_COOKIE_NAME=blytz_session
 
 - [ ] `JWT_SECRET` explicitly set
 - [ ] `DB_PASSWORD` explicitly set
+- [ ] `JWT_COOKIE_SECURE=true` in staging/production
+- [ ] `TRUSTED_PROXIES` matches Dokploy/reverse-proxy network
 - [ ] `CORS_ALLOWED_ORIGINS` matches deployed frontend origins
 - [ ] `SEED_DATA=false`
 - [ ] `AUTO_MIGRATE` reviewed for deploy target

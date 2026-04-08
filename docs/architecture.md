@@ -147,6 +147,8 @@ Current status:
 - startup behavior is now controlled by flags instead of always migrating/seeding
 - operator bookings/customers/vehicles/jobs now require auth + workshop membership
 - JWT secret must now be explicitly configured at startup
+- auth sessions use httpOnly cookies with server-side token-version revocation
+- login/register are rate limited with both per-IP and IP+email limits for the current single-instance VPS model
 
 Remaining ship blockers:
 

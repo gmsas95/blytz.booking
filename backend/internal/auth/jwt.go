@@ -11,6 +11,7 @@ type Claims struct {
 	UserID           string `json:"user_id"`
 	Email            string `json:"email"`
 	ActiveBusinessID string `json:"active_business_id,omitempty"`
+	TokenVersion     int    `json:"token_version"`
 	jwt.RegisteredClaims
 }
 
@@ -20,13 +21,14 @@ func SetJWTSecret(secret string) {
 	jwtSecret = []byte(secret)
 }
 
-func GenerateToken(userID, email string) (string, error) {
+func GenerateToken(userID, email string, tokenVersion int) (string, error) {
 	if len(jwtSecret) == 0 {
 		return "", errors.New("jwt secret is not configured")
 	}
 	claims := Claims{
-		UserID: userID,
-		Email:  email,
+		UserID:       userID,
+		Email:        email,
+		TokenVersion: tokenVersion,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

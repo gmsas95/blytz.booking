@@ -37,9 +37,11 @@ services:
       AUTO_MIGRATE: "false"
       SEED_DATA: "false"
       BACKFILL_MONEY_FIELDS: "true"
-      CORS_ALLOWED_ORIGINS: https://blytz.cloud
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
       JWT_SECRET: ${JWT_SECRET}
-      JWT_COOKIE_NAME: blytz_session
+      JWT_COOKIE_NAME: ${JWT_COOKIE_NAME:-blytz_session}
+      JWT_COOKIE_SECURE: ${JWT_COOKIE_SECURE:-true}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES}
     depends_on:
       postgres:
         condition: service_healthy
@@ -47,7 +49,7 @@ services:
       - blytzbooking-network
     labels:
       - traefik.enable=true
-      - traefik.http.routers.blytz-backend.rule=Host(`api.blytz.cloud`)
+      - traefik.http.routers.blytz-backend.rule=Host(`${API_DOMAIN}`)
       - traefik.http.routers.blytz-backend.entrypoints=websecure
       - traefik.http.routers.blytz-backend.tls=true
       - traefik.http.routers.blytz-backend.tls.certresolver=letsencrypt
@@ -61,14 +63,14 @@ services:
     container_name: blytzbooking-frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: https://api.blytz.cloud
+      VITE_API_URL: ${VITE_API_URL}
     depends_on:
       - backend
     networks:
       - blytzbooking-network
     labels:
       - traefik.enable=true
-      - traefik.http.routers.blytz-frontend.rule=Host(`blytz.cloud`)
+      - traefik.http.routers.blytz-frontend.rule=Host(`${APP_DOMAIN}`)
       - traefik.http.routers.blytz-frontend.entrypoints=websecure
       - traefik.http.routers.blytz-frontend.tls=true
       - traefik.http.routers.blytz-frontend.tls.certresolver=letsencrypt

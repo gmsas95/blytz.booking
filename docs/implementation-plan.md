@@ -11,6 +11,13 @@ This repo is useful as a base, but still contains prototype assumptions:
 - registration enumeration hardening is still partial
 - subscriptions/billing controls are not implemented yet
 
+Current auth hardening status:
+
+- httpOnly cookie sessions are in place
+- logout revokes current JWT via token-version invalidation
+- auth endpoints are rate limited with both per-IP and IP+email limits for single-instance VPS deployment
+- staging/production still require explicit secure-cookie and proxy configuration
+
 ### Slice 1 status
 
 Slice 1 is now complete in code:

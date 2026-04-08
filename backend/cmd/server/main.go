@@ -26,6 +26,7 @@ func main() {
 	}
 	auth.SetJWTSecret(cfg.JWT.Secret)
 	auth.SetCookieName(cfg.JWT.CookieName)
+	handlers.SetForceSecureCookies(cfg.JWT.ForceSecure)
 
 	// Set Gin mode
 	if cfg.Server.Env == "production" {
@@ -61,6 +62,9 @@ func main() {
 
 	// Setup Gin router
 	r := gin.Default()
+	if err := r.SetTrustedProxies(cfg.JWT.TrustedProxies); err != nil {
+		log.Fatalf("Failed to configure trusted proxies: %v", err)
+	}
 
 	allowedOrigins := make(map[string]struct{}, len(cfg.CORS.AllowedOrigins))
 	for _, origin := range cfg.CORS.AllowedOrigins {
@@ -100,13 +104,13 @@ func main() {
 	{
 		// Auth routes (public)
 		authRoutes := v1.Group("/auth")
-		authRoutes.Use(middleware.RateLimitByIP(10, time.Minute))
+		authRoutes.Use(middleware.RequireAllowedOrigin(cfg.CORS.AllowedOrigins), middleware.RateLimitByIP(30, time.Minute), middleware.RateLimitByIPAndEmail(10, time.Minute))
 		authRoutes.POST("/register", handler.Register)
 		authRoutes.POST("/login", handler.Login)
-		v1.POST("/auth/logout", handler.Logout)
+		v1.POST("/auth/logout", middleware.RequireAllowedOrigin(cfg.CORS.AllowedOrigins), auth.AuthMiddleware(handler.AuthService), handler.Logout)
 
 		// Protected routes
-		v1.GET("/auth/me", auth.AuthMiddleware(), handler.GetCurrentUser)
+		v1.GET("/auth/me", auth.AuthMiddleware(handler.AuthService), handler.GetCurrentUser)
 
 		// Businesses
 		v1.GET("/businesses", handler.ListBusinesses)
@@ -122,15 +126,15 @@ func main() {
 		v1.POST("/bookings", handler.CreateBooking)
 
 		operator := v1.Group("/businesses/:businessId")
-		operator.Use(auth.AuthMiddleware(), middleware.RequireBusinessMembership(handler.AuthService))
+		operator.Use(auth.AuthMiddleware(handler.AuthService), middleware.RequireBusinessMembership(handler.AuthService))
 		{
 			operator.GET("/bookings", handler.ListBookings)
 			operator.GET("/customers", handler.ListCustomers)
-			operator.POST("/customers", handler.CreateCustomer)
+			operator.POST("/customers", middleware.RequireAllowedOrigin(cfg.CORS.AllowedOrigins), handler.CreateCustomer)
 			operator.GET("/vehicles", handler.ListVehicles)
-			operator.POST("/vehicles", handler.CreateVehicle)
+			operator.POST("/vehicles", middleware.RequireAllowedOrigin(cfg.CORS.AllowedOrigins), handler.CreateVehicle)
 			operator.GET("/jobs", handler.ListJobs)
-			operator.POST("/jobs", handler.CreateJob)
+			operator.POST("/jobs", middleware.RequireAllowedOrigin(cfg.CORS.AllowedOrigins), handler.CreateJob)
 		}
 	}
 

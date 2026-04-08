@@ -93,6 +93,7 @@ type User struct {
 	Email        string    `json:"email" gorm:"uniqueIndex;not null"`
 	Name         string    `json:"name"`
 	PasswordHash string    `json:"-" gorm:"not null"`
+	TokenVersion int       `json:"-" gorm:"not null;default:1"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
