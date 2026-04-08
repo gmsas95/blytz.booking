@@ -11,18 +11,18 @@ export const MOCK_BUSINESSES: Business[] = [
   },
   {
     id: 'b2',
-    name: 'Lumina Wellness Spa',
-    slug: 'lumina-spa',
-    vertical: 'Wellness',
-    description: 'Massage therapy, facials, and holistic healing.',
+    name: 'TintLab Studio',
+    slug: 'tint-lab',
+    vertical: 'Automotive',
+    description: 'Window tinting and heat rejection packages for daily drivers.',
     themeColor: 'emerald',
   },
   {
     id: 'b3',
-    name: 'FlashFrame Studios',
-    slug: 'flash-frame',
-    vertical: 'Creative',
-    description: 'Editorial portraiture and high-end fashion photography.',
+    name: 'ShineBay Detailing',
+    slug: 'shine-bay',
+    vertical: 'Automotive',
+    description: 'Wash, polish, and protection packages for busy workshop teams.',
     themeColor: 'zinc',
   }
 ];
@@ -35,8 +35,9 @@ export const MOCK_SERVICES: Service[] = [
     name: 'Full Interior Detail',
     description: 'Deep clean, steam, shampoo, and leather conditioning.',
     durationMin: 120,
-    totalPrice: 200,
-    depositAmount: 50,
+    totalPriceMinor: 20000,
+    depositAmountMinor: 5000,
+    currencyCode: 'USD',
   },
   {
     id: 's2',
@@ -44,46 +45,51 @@ export const MOCK_SERVICES: Service[] = [
     name: 'Ceramic Coating Gold',
     description: '5-year protection package with paint correction.',
     durationMin: 360,
-    totalPrice: 1200,
-    depositAmount: 300,
+    totalPriceMinor: 120000,
+    depositAmountMinor: 30000,
+    currencyCode: 'USD',
   },
-  // b2: Wellness
+  // b2: Tint shop
   {
     id: 's3',
     businessId: 'b2',
-    name: 'Deep Tissue Massage',
-    description: '60-minute therapeutic massage for stress relief.',
+    name: 'Nano Ceramic Tint',
+    description: 'Premium tint package with high heat rejection film.',
     durationMin: 60,
-    totalPrice: 120,
-    depositAmount: 40,
+    totalPriceMinor: 12000,
+    depositAmountMinor: 4000,
+    currencyCode: 'USD',
   },
   {
     id: 's4',
     businessId: 'b2',
-    name: 'Hydrafacial Signature',
-    description: 'Cleanse, extract, and hydrate skin.',
+    name: 'Front Two Windows Tint',
+    description: 'Quick tint installation for front window pairs.',
     durationMin: 45,
-    totalPrice: 180,
-    depositAmount: 60,
+    totalPriceMinor: 18000,
+    depositAmountMinor: 6000,
+    currencyCode: 'USD',
   },
-  // b3: Creative (Photography)
+  // b3: Detailing bay
   {
     id: 's5',
     businessId: 'b3',
-    name: 'Editorial Portrait Session',
-    description: '2-hour studio session, 3 outfit changes, 10 retouched edits.',
+    name: 'Paint Decontamination Detail',
+    description: '2-hour decon wash, clay treatment, and gloss enhancement.',
     durationMin: 120,
-    totalPrice: 450,
-    depositAmount: 150,
+    totalPriceMinor: 45000,
+    depositAmountMinor: 15000,
+    currencyCode: 'USD',
   },
   {
     id: 's6',
     businessId: 'b3',
-    name: 'Mini Headshot Blitzer',
-    description: '30-minute express session. Perfect for LinkedIn.',
+    name: 'Express Exterior Wash',
+    description: '30-minute wash and dry for quick turnaround jobs.',
     durationMin: 30,
-    totalPrice: 150,
-    depositAmount: 150, // Full payment
+    totalPriceMinor: 15000,
+    depositAmountMinor: 15000, // Full payment
+    currencyCode: 'USD',
   },
 ];
 
@@ -124,8 +130,9 @@ export const MOCK_BOOKINGS: Booking[] = [
     slotTime: formatSlot(today, 9),
     customer: { name: 'Alice Smith', email: 'alice@example.com', phone: '555-0101' },
     status: BookingStatus.CONFIRMED,
-    depositPaid: 50,
-    totalPrice: 200,
+    depositPaidMinor: 5000,
+    totalPriceMinor: 20000,
+    currencyCode: 'USD',
     createdAt: new Date(Date.now() - 86400000).toISOString()
   },
   {
@@ -137,8 +144,9 @@ export const MOCK_BOOKINGS: Booking[] = [
     slotTime: formatSlot(today, 14),
     customer: { name: 'Bob Jones', email: 'bob@example.com', phone: '555-0202' },
     status: BookingStatus.PENDING,
-    depositPaid: 40,
-    totalPrice: 120,
+    depositPaidMinor: 4000,
+    totalPriceMinor: 12000,
+    currencyCode: 'USD',
     createdAt: new Date().toISOString()
   }
 ];

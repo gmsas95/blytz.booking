@@ -2,29 +2,28 @@ package auth
 
 import (
 	"errors"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
 type Claims struct {
-	UserID string `json:"user_id"`
-	Email  string `json:"email"`
+	UserID           string `json:"user_id"`
+	Email            string `json:"email"`
+	ActiveBusinessID string `json:"active_business_id,omitempty"`
 	jwt.RegisteredClaims
 }
 
 var jwtSecret []byte
 
-func init() {
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = "default-secret-change-in-production"
-	}
+func SetJWTSecret(secret string) {
 	jwtSecret = []byte(secret)
 }
 
 func GenerateToken(userID, email string) (string, error) {
+	if len(jwtSecret) == 0 {
+		return "", errors.New("jwt secret is not configured")
+	}
 	claims := Claims{
 		UserID: userID,
 		Email:  email,
@@ -39,6 +38,9 @@ func GenerateToken(userID, email string) (string, error) {
 }
 
 func ValidateToken(tokenString string) (*Claims, error) {
+	if len(jwtSecret) == 0 {
+		return nil, errors.New("jwt secret is not configured")
+	}
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("invalid signing method")

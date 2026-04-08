@@ -20,8 +20,9 @@ export interface Service {
   name: string;
   description: string;
   durationMin: number;
-  totalPrice: number;
-  depositAmount: number;
+  totalPriceMinor: number;
+  depositAmountMinor: number;
+  currencyCode: string;
 }
 
 export interface Slot {
@@ -47,8 +48,9 @@ export interface Booking {
   slotTime: string;
   customer: CustomerDetails;
   status: BookingStatus;
-  depositPaid: number;
-  totalPrice: number;
+  depositPaidMinor: number;
+  totalPriceMinor: number;
+  currencyCode: string;
   createdAt: string;
 }
 

@@ -1,6 +1,16 @@
-# Blytz.Cloud - Booking Management Prototype
+# Blytz.Cloud / Blytz.Auto - Booking SaaS Iteration Base
 
-A cloud-based booking management prototype for freelancers and service businesses. **This is a development prototype - NOT production ready.**
+A cloud-based booking management prototype that is now being repurposed into **Blytz.Auto**, a simpler SaaS for automotive workshops. **This repo is not production ready yet.**
+
+## Current Direction
+
+Read these first:
+
+- `docs/INDEX.md`
+- `docs/product.md`
+- `docs/mvp.md`
+- `docs/architecture.md`
+- `docs/implementation-plan.md`
 
 ## ⚠️ Important Notice
 
@@ -115,8 +125,8 @@ GET  /api/v1/businesses/:id/slots    # Get available time slots
 
 ### Booking Endpoints
 ```
-POST /api/v1/bookings                # Create new booking
-GET  /api/v1/businesses/:id/bookings # List bookings for business
+POST /api/v1/bookings                # Create new public booking
+GET  /api/v1/businesses/:id/bookings # List bookings for business (auth + membership required)
 ```
 
 ### Health Check
@@ -124,7 +134,7 @@ GET  /api/v1/businesses/:id/bookings # List bookings for business
 GET  /health                         # Service health status
 ```
 
-**Note:** No authentication endpoints exist yet.
+**Note:** Authentication exists, and operator booking access is now workshop-membership scoped.
 
 ## Environment Configuration
 
@@ -146,13 +156,12 @@ DB_SSLMODE=disable
 # Server
 SERVER_PORT=8080
 ENV=development
+AUTO_MIGRATE=true
+SEED_DATA=false
+BACKFILL_MONEY_FIELDS=true
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 
-# Redis (optional)
-REDIS_HOST=localhost:6379
-REDIS_PASSWORD=
-REDIS_DB=0
-
-# JWT (unused currently)
+# JWT
 JWT_SECRET=your-secret-key
 ```
 

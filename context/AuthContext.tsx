@@ -1,35 +1,121 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { api } from '../api';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { api, CurrentUserResponse, Membership, User } from '../api';
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  login: () => void;
+  isLoading: boolean;
+  currentUser: User | null;
+  memberships: Membership[];
+  activeBusinessId: string | null;
+  activeMembership: Membership | null;
+  login: (token?: string) => Promise<void>;
   logout: () => void;
+  refreshSession: () => Promise<void>;
+  setActiveBusinessId: (businessId: string) => void;
 }
+
+const ACTIVE_BUSINESS_STORAGE_KEY = 'active_business_id';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const readStoredActiveBusinessId = () => localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY);
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [memberships, setMemberships] = useState<Membership[]>([]);
+  const [activeBusinessId, setActiveBusinessIdState] = useState<string | null>(readStoredActiveBusinessId());
+
+  const applySession = (session: CurrentUserResponse) => {
+    setCurrentUser(session.user);
+    setMemberships(session.memberships);
+    setIsAuthenticated(true);
+
+    const storedActiveBusinessId = readStoredActiveBusinessId();
+    const allowedBusinessIds = new Set(session.memberships.map((membership) => membership.business_id));
+    const nextActiveBusinessId = storedActiveBusinessId && allowedBusinessIds.has(storedActiveBusinessId)
+      ? storedActiveBusinessId
+      : session.active_business_id || session.memberships[0]?.business_id || null;
+
+    if (nextActiveBusinessId) {
+      localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, nextActiveBusinessId);
+    } else {
+      localStorage.removeItem(ACTIVE_BUSINESS_STORAGE_KEY);
+    }
+
+    setActiveBusinessIdState(nextActiveBusinessId);
+  };
+
+  const clearSession = () => {
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setMemberships([]);
+    setActiveBusinessIdState(null);
+    localStorage.removeItem(ACTIVE_BUSINESS_STORAGE_KEY);
+  };
+
+  const refreshSession = async () => {
+    const token = api.getToken();
+    if (!token) {
+      clearSession();
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const session = await api.getCurrentUser();
+      applySession(session);
+    } catch {
+      api.logout();
+      clearSession();
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const token = api.getToken();
-    if (token) {
-      setIsAuthenticated(true);
-    }
+    refreshSession();
   }, []);
 
-  const login = () => {
-    setIsAuthenticated(true);
+  const login = async (token?: string) => {
+    if (token) {
+      api.setToken(token);
+    }
+    await refreshSession();
   };
 
   const logout = () => {
     api.logout();
-    setIsAuthenticated(false);
+    clearSession();
+    setIsLoading(false);
   };
 
+  const setActiveBusinessId = (businessId: string) => {
+    setActiveBusinessIdState(businessId);
+    localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, businessId);
+  };
+
+  const activeMembership = useMemo(() => {
+    return memberships.find((membership) => membership.business_id === activeBusinessId) || null;
+  }, [activeBusinessId, memberships]);
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        isLoading,
+        currentUser,
+        memberships,
+        activeBusinessId,
+        activeMembership,
+        login,
+        logout,
+        refreshSession,
+        setActiveBusinessId,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

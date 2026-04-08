@@ -18,22 +18,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
-    container_name: blytzbooking-redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-    volumes:
-      - blytzbooking_persistent_redis_data:/data
-    networks:
-      - blytzbooking-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   # Go Backend API
   backend:
     build:
@@ -50,14 +34,13 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_NAME: ${DB_NAME:-blytz}
       DB_SSLMODE: disable
-      REDIS_HOST: redis:6379
-      REDIS_PASSWORD: ""
-      REDIS_DB: 0
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      AUTO_MIGRATE: "false"
+      SEED_DATA: "false"
+      BACKFILL_MONEY_FIELDS: "true"
+      CORS_ALLOWED_ORIGINS: https://blytz.cloud
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - blytzbooking-network
@@ -103,7 +86,4 @@ networks:
 volumes:
   blytzbooking_persistent_postgres_data:
     name: blytzbooking_persistent_postgres_data
-    driver: local
-  blytzbooking_persistent_redis_data:
-    name: blytzbooking_persistent_redis_data
     driver: local

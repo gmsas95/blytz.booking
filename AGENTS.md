@@ -126,7 +126,7 @@ GET  /api/v1/businesses/:id/slots    # Get available slots
 ### Bookings
 ```
 POST /api/v1/bookings           # Create booking (with business logic validation)
-GET  /api/v1/businesses/:id/bookings # List bookings
+GET  /api/v1/businesses/:id/bookings # List bookings (auth + membership required)
 ```
 
 **Missing endpoints:** Password reset, payment, notifications, booking management (cancel/reschedule)

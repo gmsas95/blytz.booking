@@ -107,11 +107,11 @@ export const SaaSLanding: React.FC = () => {
               CHOOSE YOUR FIGHTER
             </h2>
             <p className="text-zinc-400 max-w-md">
-              See how Blytz.Cloud adapts to any service vertical. Select a preset below to enter the booking flow.
+              Explore how Blytz.Auto supports automotive workshops. Select a workshop preset below to enter the booking flow.
             </p>
           </div>
           <div className="text-right hidden md:block">
-            <div className="text-zinc-500 font-mono text-sm">{businesses.length} VERTICALS AVAILABLE</div>
+            <div className="text-zinc-500 font-mono text-sm">{businesses.length} WORKSHOPS AVAILABLE</div>
           </div>
         </div>
 

@@ -18,51 +18,45 @@ func NewBookingService(db *gorm.DB) *BookingService {
 }
 
 func (s *BookingService) Create(booking *models.Booking) error {
-	// Check if slot exists and is available
-	var slot models.Slot
-	if err := s.DB.Where("id = ? AND is_booked = ?", booking.SlotID, false).First(&slot).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return ErrBadRequest
+	return s.DB.Transaction(func(tx *gorm.DB) error {
+		var service models.Service
+		if err := tx.Where("id = ? AND business_id = ?", booking.ServiceID, booking.BusinessID).First(&service).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return ErrBadRequest
+			}
+			return err
 		}
-		return err
-	}
 
-	// Check if service exists
-	var service models.Service
-	if err := s.DB.Where("id = ?", booking.ServiceID).First(&service).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return ErrBadRequest
+		var slot models.Slot
+		if err := tx.Where("id = ? AND business_id = ?", booking.SlotID, booking.BusinessID).First(&slot).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return ErrBadRequest
+			}
+			return err
 		}
-		return err
-	}
 
-	// Set booking details from service and slot
-	booking.ServiceName = service.Name
-	booking.SlotTime = slot.StartTime
-	booking.DepositPaid = service.DepositAmount
-	booking.TotalPrice = service.TotalPrice
-
-	// Start transaction
-	tx := s.DB.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
+		reserveResult := tx.Model(&models.Slot{}).
+			Where("id = ? AND business_id = ? AND is_booked = ?", booking.SlotID, booking.BusinessID, false).
+			Update("is_booked", true)
+		if reserveResult.Error != nil {
+			return reserveResult.Error
 		}
-	}()
+		if reserveResult.RowsAffected == 0 {
+			return ErrConflict
+		}
 
-	// Create booking
-	if err := tx.Create(booking).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
+		booking.ServiceName = service.Name
+		booking.SlotTime = slot.StartTime
+		booking.DepositPaidMinor = service.DepositAmountMinor
+		booking.TotalPriceMinor = service.TotalPriceMinor
+		booking.CurrencyCode = service.CurrencyCode
 
-	// Mark slot as booked
-	if err := tx.Model(&models.Slot{}).Where("id = ?", booking.SlotID).Update("is_booked", true).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
+		if err := tx.Create(booking).Error; err != nil {
+			return err
+		}
 
-	return tx.Commit().Error
+		return nil
+	})
 }
 
 func (s *BookingService) GetByBusiness(businessID uuid.UUID) ([]models.Booking, error) {

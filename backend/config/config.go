@@ -3,12 +3,14 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
-	Redis    RedisConfig
+	CORS     CORSConfig
+	Startup  StartupConfig
 	JWT      JWTConfig
 }
 
@@ -26,10 +28,14 @@ type DatabaseConfig struct {
 	SSLMode  string
 }
 
-type RedisConfig struct {
-	Host     string
-	Password string
-	DB       int
+type CORSConfig struct {
+	AllowedOrigins []string
+}
+
+type StartupConfig struct {
+	AutoMigrate   bool
+	SeedData      bool
+	BackfillMoney bool
 }
 
 type JWTConfig struct {
@@ -50,13 +56,16 @@ func LoadConfig() *Config {
 			DBName:   getEnv("DB_NAME", "blytz"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
-		Redis: RedisConfig{
-			Host:     getEnv("REDIS_HOST", "localhost:6379"),
-			Password: getEnv("REDIS_PASSWORD", ""),
-			DB:       getEnvAsInt("REDIS_DB", 0),
+		CORS: CORSConfig{
+			AllowedOrigins: getEnvAsSlice("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173"),
+		},
+		Startup: StartupConfig{
+			AutoMigrate:   getEnvAsBool("AUTO_MIGRATE", getEnv("ENV", "development") != "production"),
+			SeedData:      getEnvAsBool("SEED_DATA", false),
+			BackfillMoney: getEnvAsBool("BACKFILL_MONEY_FIELDS", getEnv("ENV", "development") != "production"),
 		},
 		JWT: JWTConfig{
-			Secret: getEnv("JWT_SECRET", "change-me-in-production"),
+			Secret: getEnv("JWT_SECRET", ""),
 		},
 	}
 }
@@ -75,4 +84,26 @@ func getEnvAsInt(key string, defaultVal int) int {
 		}
 	}
 	return defaultVal
+}
+
+func getEnvAsBool(key string, defaultVal bool) bool {
+	if value := os.Getenv(key); value != "" {
+		if boolVal, err := strconv.ParseBool(value); err == nil {
+			return boolVal
+		}
+	}
+	return defaultVal
+}
+
+func getEnvAsSlice(key, defaultVal string) []string {
+	value := getEnv(key, defaultVal)
+	parts := strings.Split(value, ",")
+	origins := make([]string, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			origins = append(origins, trimmed)
+		}
+	}
+	return origins
 }

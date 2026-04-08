@@ -71,7 +71,7 @@ func ValidateServiceName(name string) bool {
 	return len(name) >= 3 && len(name) <= 100
 }
 
-// ValidatePrice validates a price value
-func ValidatePrice(price float64) bool {
-	return price > 0 && price <= 100000
+// ValidatePrice validates a price value in minor units
+func ValidatePrice(priceMinor int64) bool {
+	return priceMinor > 0 && priceMinor <= 10000000
 }

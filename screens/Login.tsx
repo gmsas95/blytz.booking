@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Mail, ArrowRight } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { api } from '../api';
@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,9 +30,9 @@ export const Login: React.FC = () => {
         response = await api.login({ email, password });
       }
 
-      api.setToken(response.token);
-      login();
-      navigate('/dashboard');
+      await login(response.token);
+      const nextPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/dashboard';
+      navigate(nextPath);
     } catch (err: any) {
       setError(err.message || 'Authentication failed');
     } finally {

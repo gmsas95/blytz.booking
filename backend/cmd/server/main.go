@@ -3,19 +3,24 @@ package main
 import (
 	"log"
 	"net/http"
+	"strings"
 
 	"blytz.cloud/backend/config"
 	"blytz.cloud/backend/internal/auth"
 	"blytz.cloud/backend/internal/handlers"
+	"blytz.cloud/backend/internal/middleware"
 	"blytz.cloud/backend/internal/repository"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func main() {
 	// Load configuration
 	cfg := config.LoadConfig()
+	if cfg.JWT.Secret == "" || cfg.JWT.Secret == "change-me-in-production" {
+		log.Fatal("JWT_SECRET must be explicitly configured")
+	}
+	auth.SetJWTSecret(cfg.JWT.Secret)
 
 	// Set Gin mode
 	if cfg.Server.Env == "production" {
@@ -28,13 +33,22 @@ func main() {
 		log.Fatalf("Failed to initialize repository: %v", err)
 	}
 
-	// Run migrations and seed data
-	if err := repo.AutoMigrate(); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
+	if cfg.Startup.AutoMigrate {
+		if err := repo.AutoMigrate(); err != nil {
+			log.Fatalf("Failed to run migrations: %v", err)
+		}
 	}
 
-	if err := repo.SeedData(); err != nil {
-		log.Printf("Warning: Failed to seed data: %v", err)
+	if cfg.Startup.BackfillMoney {
+		if err := repo.BackfillMoneyToMinorUnits("USD"); err != nil {
+			log.Fatalf("Failed to backfill money fields: %v", err)
+		}
+	}
+
+	if cfg.Startup.SeedData {
+		if err := repo.SeedData(); err != nil {
+			log.Printf("Warning: Failed to seed data: %v", err)
+		}
 	}
 
 	// Initialize handlers
@@ -43,14 +57,29 @@ func main() {
 	// Setup Gin router
 	r := gin.Default()
 
+	allowedOrigins := make(map[string]struct{}, len(cfg.CORS.AllowedOrigins))
+	for _, origin := range cfg.CORS.AllowedOrigins {
+		allowedOrigins[origin] = struct{}{}
+	}
+
 	// CORS middleware
 	r.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		origin := c.Request.Header.Get("Origin")
+		if origin != "" {
+			if _, ok := allowedOrigins[origin]; ok {
+				c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+				c.Writer.Header().Set("Vary", "Origin")
+				c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+			} else if c.Request.Method == http.MethodOptions {
+				c.AbortWithStatus(http.StatusForbidden)
+				return
+			}
+		}
+
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
 
-		if c.Request.Method == "OPTIONS" {
+		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(204)
 			return
 		}
@@ -69,27 +98,7 @@ func main() {
 		v1.POST("/auth/login", handler.Login)
 
 		// Protected routes
-		v1.GET("/auth/me", auth.AuthMiddleware(), func(c *gin.Context) {
-			userID := c.GetString("user_id")
-			userUUID, err := uuid.Parse(userID)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-				return
-			}
-
-			user, err := handler.AuthService.GetByID(userUUID)
-			if err != nil {
-				c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-				return
-			}
-
-			c.JSON(http.StatusOK, gin.H{
-				"id":         user.ID.String(),
-				"email":      user.Email,
-				"name":       user.Name,
-				"created_at": user.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-			})
-		})
+		v1.GET("/auth/me", auth.AuthMiddleware(), handler.GetCurrentUser)
 
 		// Businesses
 		v1.GET("/businesses", handler.ListBusinesses)
@@ -103,10 +112,23 @@ func main() {
 
 		// Bookings
 		v1.POST("/bookings", handler.CreateBooking)
-		v1.GET("/businesses/:businessId/bookings", handler.ListBookings)
+
+		operator := v1.Group("/businesses/:businessId")
+		operator.Use(auth.AuthMiddleware(), middleware.RequireBusinessMembership(handler.AuthService))
+		{
+			operator.GET("/bookings", handler.ListBookings)
+			operator.GET("/customers", handler.ListCustomers)
+			operator.POST("/customers", handler.CreateCustomer)
+			operator.GET("/vehicles", handler.ListVehicles)
+			operator.POST("/vehicles", handler.CreateVehicle)
+			operator.GET("/jobs", handler.ListJobs)
+			operator.POST("/jobs", handler.CreateJob)
+		}
 	}
 
 	// Start server
+	log.Printf("Allowed CORS origins: %s", strings.Join(cfg.CORS.AllowedOrigins, ", "))
+	log.Printf("Startup flags: auto_migrate=%t seed_data=%t backfill_money=%t", cfg.Startup.AutoMigrate, cfg.Startup.SeedData, cfg.Startup.BackfillMoney)
 	log.Printf("Starting server on port %s...", cfg.Server.Port)
 	if err := r.Run(":" + cfg.Server.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
