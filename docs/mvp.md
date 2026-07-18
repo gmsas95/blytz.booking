@@ -1,3 +1,12 @@
+---
+type: guide
+title: Blytz.Auto MVP Scope
+resource: blytz-booking
+description: "> Last updated: 2026-04-08"
+tags: [postgresql, stripe]
+updated: 2026-06-18
+---
+
 # Blytz.Auto MVP Scope
 
 > Last updated: 2026-04-08

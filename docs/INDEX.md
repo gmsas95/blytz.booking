@@ -1,3 +1,12 @@
+---
+type: guide
+title: Blytz.Auto Documentation Index
+resource: blytz-booking
+description: "> Last updated: 2026-04-08"
+tags: [go, postgresql, react, typescript]
+updated: 2026-06-18
+---
+
 # Blytz.Auto Documentation Index
 
 > Last updated: 2026-04-08

@@ -1,3 +1,12 @@
+---
+type: architecture
+title: Blytz.Auto Architecture
+resource: blytz-booking
+description: "> Last updated: 2026-04-08"
+tags: [architecture, go, postgresql, react, redis, typescript]
+updated: 2026-06-18
+---
+
 # Blytz.Auto Architecture
 
 > Last updated: 2026-04-08

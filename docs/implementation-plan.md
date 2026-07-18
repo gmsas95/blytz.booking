@@ -1,3 +1,12 @@
+---
+type: plan
+title: Blytz.Auto Implementation Plan
+resource: blytz-booking
+description: "> Last updated: 2026-04-08"
+tags: [implementation, planning, redis]
+updated: 2026-06-18
+---
+
 # Blytz.Auto Implementation Plan
 
 > Last updated: 2026-04-08

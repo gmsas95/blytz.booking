@@ -1,6 +1,6 @@
 ## Global Standards
 The rules in `~/.config/opencode/AGENTS.md` apply to all sessions.
-These global rules (Verify-After-Complete, Diagnose-First, Plan-First) are MANDATORY
+These global rules (Verify-After-Complete, Diagnose-First, Plan-First, OKF Documentation Standard) are MANDATORY
 and take precedence over any conflicting project-level instructions.
 
 # Blytz.Cloud - Development Guide

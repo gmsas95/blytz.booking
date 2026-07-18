@@ -1,3 +1,12 @@
+---
+type: guide
+title: Blytz.Auto Product Framing
+resource: blytz-booking
+description: "> Last updated: 2026-04-08"
+tags: [product, products]
+updated: 2026-06-18
+---
+
 # Blytz.Auto Product Framing
 
 > Last updated: 2026-04-08

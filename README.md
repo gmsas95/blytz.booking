@@ -1,3 +1,12 @@
+---
+type: readme
+title: Blytz.Cloud / Blytz.Auto - Booking SaaS Iteration Base
+resource: blytz-booking
+description: "A cloud-based booking management prototype that is now being repurposed into **Blytz.Auto**, a simpler SaaS for automotive workshops. **This repo is not production ready yet.**"
+tags: [docker, go, postgresql, react, stripe, tailwind, typescript]
+updated: 2026-06-18
+---
+
 # Blytz.Cloud / Blytz.Auto - Booking SaaS Iteration Base
 
 A cloud-based booking management prototype that is now being repurposed into **Blytz.Auto**, a simpler SaaS for automotive workshops. **This repo is not production ready yet.**
